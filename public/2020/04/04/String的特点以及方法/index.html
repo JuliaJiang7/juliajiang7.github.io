@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.ico">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"juliajiang.github.io","root":"/","scheme":"Gemini","version":"7.7.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="本文主要从源码出发，介绍了 String 的一些特点和方法。包括了 String 的底层实现，源码中的几个重要方法实现，String 使用 final 修饰的原因，String 与 StringBuilder、StringBuffered 的区别，String 在 JVM 中的存储，intern() 方法，不可变性，+ 的重载以及编译器使用 StringBuilder 的优化。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="String的特点以及方法">
+<meta property="og:url" content="https://juliajiang.github.io/2020/04/04/String%E7%9A%84%E7%89%B9%E7%82%B9%E4%BB%A5%E5%8F%8A%E6%96%B9%E6%B3%95/index.html">
+<meta property="og:site_name" content="Julia Jiang&#39;s Blog">
+<meta property="og:description" content="本文主要从源码出发，介绍了 String 的一些特点和方法。包括了 String 的底层实现，源码中的几个重要方法实现，String 使用 final 修饰的原因，String 与 StringBuilder、StringBuffered 的区别，String 在 JVM 中的存储，intern() 方法，不可变性，+ 的重载以及编译器使用 StringBuilder 的优化。">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://juliajiang.github.io/2020/04/04/pictures/%E5%BE%AE%E4%BF%A1%E6%88%AA%E5%9B%BE_20200405164821-1586080520904.png">
+<meta property="og:image" content="https://juliajiang.github.io/2020/04/04/pictures/image-20200405194407416.png">
+<meta property="article:published_time" content="2020-04-04T15:24:48.000Z">
+<meta property="article:modified_time" content="2020-04-12T08:21:47.120Z">
+<meta property="article:author" content="Julia Jiang">
+<meta property="article:tag" content="String">
+<meta property="article:tag" content="Java">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://juliajiang.github.io/2020/04/04/pictures/%E5%BE%AE%E4%BF%A1%E6%88%AA%E5%9B%BE_20200405164821-1586080520904.png">
+
+<link rel="canonical" href="https://juliajiang.github.io/2020/04/04/String%E7%9A%84%E7%89%B9%E7%82%B9%E4%BB%A5%E5%8F%8A%E6%96%B9%E6%B3%95/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>String的特点以及方法 | Julia Jiang's Blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Julia Jiang's Blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Java, Algorithm, NLP</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives</a>
+
+  </li>
+        <li class="menu-item menu-item-commonweal">
+
+    <a href="/404/" rel="section"><i class="fa fa-fw fa-heartbeat"></i>Commonweal 404</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://juliajiang.github.io/2020/04/04/String%E7%9A%84%E7%89%B9%E7%82%B9%E4%BB%A5%E5%8F%8A%E6%96%B9%E6%B3%95/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/icon.jpg">
+      <meta itemprop="name" content="Julia Jiang">
+      <meta itemprop="description" content="If a thing is worth doing, it's worth doing well">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Julia Jiang's Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          String的特点以及方法
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2020-04-04 23:24:48" itemprop="dateCreated datePublished" datetime="2020-04-04T23:24:48+08:00">2020-04-04</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2020-04-12 16:21:47" itemprop="dateModified" datetime="2020-04-12T16:21:47+08:00">2020-04-12</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">Views: </span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+              <span>7.8k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+              <span>7 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>本文主要从源码出发，介绍了 String 的一些特点和方法。包括了 String 的底层实现，源码中的几个重要方法实现，String 使用 final 修饰的原因，String 与 StringBuilder、StringBuffered 的区别，String 在 JVM 中的存储，intern() 方法，不可变性，+ 的重载以及编译器使用 StringBuilder 的优化。</p>
+<a id="more"></a>
+
+<h2 id="1-String-如何实现"><a href="#1-String-如何实现" class="headerlink" title="1. String 如何实现"></a>1. String 如何实现</h2><p>以主流的 JDK 版本 1.8 来说，String 内部实际存储结构为 char 数组，源码如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">final</span> <span class="class"><span class="keyword">class</span> <span class="title">String</span></span></span><br><span class="line"><span class="class">    <span class="keyword">implements</span> <span class="title">java</span>.<span class="title">io</span>.<span class="title">Serializable</span>, <span class="title">Comparable</span>&lt;<span class="title">String</span>&gt;, <span class="title">CharSequence</span> </span>&#123;</span><br><span class="line">    <span class="comment">/** The value is used for character storage. 用于储存字符串的值*/</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> <span class="keyword">char</span> value[];</span><br><span class="line"></span><br><span class="line">    <span class="comment">/** Cache the hash code for the string 缓存字符串的Hash Code*/</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">int</span> hash; <span class="comment">// Default to 0</span></span><br><span class="line">    .....</span><br></pre></td></tr></table></figure>
+
+<p>在 Java 9 之后，String 类的实现改用 byte 数组存储字符串 <code>private final byte[] value</code></p>
+<h2 id="2-String-源码中的几个重要方法"><a href="#2-String-源码中的几个重要方法" class="headerlink" title="2. String 源码中的几个重要方法"></a>2. String 源码中的几个重要方法</h2><h3 id="2-1-多构造方法"><a href="#2-1-多构造方法" class="headerlink" title="2.1 多构造方法"></a>2.1 多构造方法</h3><p>如下选出源码中 String 比较重要的几个构造方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// String 为参数的构造方法</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="title">String</span><span class="params">(String original)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">this</span>.value = original.value;</span><br><span class="line">    <span class="keyword">this</span>.hash = original.hash;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// char[] 为参数构造方法</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="title">String</span><span class="params">(<span class="keyword">char</span> value[])</span> </span>&#123;</span><br><span class="line">    <span class="keyword">this</span>.value = Arrays.copyOf(value, value.length);</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// StringBuffer 为参数的构造方法</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="title">String</span><span class="params">(StringBuffer buffer)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">synchronized</span>(buffer) &#123;</span><br><span class="line">        <span class="keyword">this</span>.value = Arrays.copyOf(buffer.getValue(), buffer.length());</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// StringBuilder 为参数的构造方法</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="title">String</span><span class="params">(StringBuilder builder)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">this</span>.value = Arrays.copyOf(builder.getValue(), builder.length());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-2-equals-比较两个字符串是否相等"><a href="#2-2-equals-比较两个字符串是否相等" class="headerlink" title="2.2 equals() 比较两个字符串是否相等"></a>2.2 equals() 比较两个字符串是否相等</h3><p><a href="https://www.cnblogs.com/skywang12345/p/3324958.html" target="_blank" rel="noopener">Object 的 equals 方法以及与 == de 区别更详细解释请参考</a></p>
+<p>Object 的 equals() 方法源码如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">equals</span><span class="params">(Object obj)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> (<span class="keyword">this</span> == obj);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>String 的 equals() 方法重写了 Object 的 equals() 方法，equals() 方法需要传递一个 Object 类型的参数值，在比较时先判断对比的值是否为 String 类型，如果不是直接返回false，如果是继续判断，具体源码如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">equals</span><span class="params">(Object anObject)</span> </span>&#123;</span><br><span class="line">    <span class="comment">//对象引用相同，直接返回</span></span><br><span class="line">    <span class="keyword">if</span> (<span class="keyword">this</span> == anObject) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//判断对比的值是否为String类型</span></span><br><span class="line">    <span class="keyword">if</span> (anObject <span class="keyword">instanceof</span> String) &#123;</span><br><span class="line">        String anotherString = (String)anObject;</span><br><span class="line">        <span class="keyword">int</span> n = value.length;</span><br><span class="line">        <span class="keyword">if</span> (n == anotherString.value.length) &#123;</span><br><span class="line">            <span class="comment">//把两个字符串转为 char[] 数组对比</span></span><br><span class="line">            <span class="keyword">char</span> v1[] = value;</span><br><span class="line">            <span class="keyword">char</span> v2[] = anotherString.value;</span><br><span class="line">            <span class="keyword">int</span> i = <span class="number">0</span>;</span><br><span class="line">            <span class="keyword">while</span> (n-- != <span class="number">0</span>) &#123;</span><br><span class="line">                <span class="keyword">if</span> (v1[i] != v2[i])</span><br><span class="line">                    <span class="keyword">return</span> <span class="keyword">false</span>;</span><br><span class="line">                i++;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">false</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>还有一个和 equals() 比较类似的方法 equalsIgnoreCase()，它是用于忽略字符串的大小写之后进行字符串对比。</p>
+<p><strong>equals() 和 == 的区别：</strong></p>
+<ol>
+<li>== 对于基本数据类型来说，是比较<strong>值</strong>是否相等的；对于引用类型来说，是用于比较<strong>引用地址</strong>是否相等的</li>
+<li>从 Object 的 equals() 方法源码来看，对于 Object 而言，equals() 方法其实就是 ==, 而 String 重写了 equals() 方法，用于比较两个字符串的值是否相等。</li>
+</ol>
+<h3 id="2-3-compareTo-比较两个字符串"><a href="#2-3-compareTo-比较两个字符串" class="headerlink" title="2.3 compareTo() 比较两个字符串"></a>2.3 compareTo() 比较两个字符串</h3><p>用于两个字符串的字典序比较，返回 int 类型的值，源码如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">compareTo</span><span class="params">(String anotherString)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> len1 = value.length;</span><br><span class="line">    <span class="keyword">int</span> len2 = anotherString.value.length;</span><br><span class="line">    <span class="keyword">int</span> lim = Math.min(len1, len2);</span><br><span class="line">    <span class="keyword">char</span> v1[] = value;</span><br><span class="line">    <span class="keyword">char</span> v2[] = anotherString.value;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">int</span> k = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">while</span> (k &lt; lim) &#123;</span><br><span class="line">        <span class="keyword">char</span> c1 = v1[k];</span><br><span class="line">        <span class="keyword">char</span> c2 = v2[k];</span><br><span class="line">        <span class="keyword">if</span> (c1 != c2) &#123;</span><br><span class="line">            <span class="keyword">return</span> c1 - c2;</span><br><span class="line">        &#125;</span><br><span class="line">        k++;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> len1 - len2;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>还有一个和 compareTo() 比较类似的方法 compareToIgnoreCase()，用于忽略大小写后比较两个字符串。</p>
+<p><strong>equals() 和 compareTo() 方法的区别：</strong></p>
+<ol>
+<li>equals() 可以接收一个Object类型的参数，而compareTo() 只接受String</li>
+<li>equals 返回值为 boolean, compareTo 返回 int</li>
+</ol>
+<h3 id="2-4-其他重要方法"><a href="#2-4-其他重要方法" class="headerlink" title="2.4 其他重要方法"></a>2.4 其他重要方法</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">indexOf()：查询字符串首次出现的下标位置</span><br><span class="line">lastIndexOf()：查询字符串最后出现的下标位置</span><br><span class="line">contains()：查询字符串中是否包含另一个字符串</span><br><span class="line">toLowerCase()：把字符串全部转换成小写</span><br><span class="line">toUpperCase()：把字符串全部转换成大写</span><br><span class="line">length()：查询字符串的长度</span><br><span class="line">trim()：去掉字符串首尾空格</span><br><span class="line">replace()：替换字符串中的某些字符</span><br><span class="line">split()：把字符串分割并返回字符串数组</span><br><span class="line">join()：把字符串数组转为字符串</span><br></pre></td></tr></table></figure>
+
+<h2 id="3-为什么-String-类型用-final-修饰？"><a href="#3-为什么-String-类型用-final-修饰？" class="headerlink" title="3. 为什么 String 类型用 final 修饰？"></a>3. 为什么 String 类型用 final 修饰？</h2><p>从 String 类的源码来看，String 是被 final 修饰的不可继承类，源码如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">final</span> <span class="class"><span class="keyword">class</span> <span class="title">String</span></span></span><br><span class="line"><span class="class">    <span class="keyword">implements</span> <span class="title">java</span>.<span class="title">io</span>.<span class="title">Serializable</span>, <span class="title">Comparable</span>&lt;<span class="title">String</span>&gt;, <span class="title">CharSequence</span> </span>&#123;</span><br><span class="line">    ...</span><br></pre></td></tr></table></figure>
+
+<p>那这样设计有什么好处呢？</p>
+<p>Java 语言之父 James Gosling 的回答是，他会更倾向于使用 final，因为它能够缓存结果，当你在传参时，不需要考虑谁会修改它的值；如果是可变的话，则有可能需要重新拷贝出来一个新值进行传参，这样在性能上有一定的损失。</p>
+<p>James Gosling 还说迫使 String 类设计成不可变的另一个原因是<strong>安全</strong>。当你在调用其他方法时，比如在调用一些系统级操作指令之前，可能会有一系列校验，如果是可变的话，可能在你校验之后，它的内部值又被改变了，这样可能引起严重的系统崩溃问题，这是迫使 String 类设计为不可变类的一个重要原因。</p>
+<p>总结来说，使用 final 修饰的第一个好处是<strong>安全</strong>，第二个好处是<strong>高效</strong>。我们以 JVM 中的字符串常量池为例，有如下两个变量：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">String s1 = <span class="string">"java"</span>;</span><br><span class="line">String s2 = <span class="string">"java"</span>;</span><br></pre></td></tr></table></figure>
+
+<p>只有字符串是不可变时，我们才能实现字符串常量池，它可以为我们缓存字符串，提高程序运行效率。</p>
+<p><img src="../pictures/%E5%BE%AE%E4%BF%A1%E6%88%AA%E5%9B%BE_20200405164821-1586080520904.png" alt="微信截图_20200405164821"></p>
+<p>试想如果 String 是可变的，那当 s1 的值修改之后，s2 的值也会跟着改变，这样就和我们预期的结果不符合，因此也就没有办法实现字符串常量池的功能了。</p>
+<h2 id="4-String-和-StringBuilder、StringBuffer-的区别"><a href="#4-String-和-StringBuilder、StringBuffer-的区别" class="headerlink" title="4. String 和 StringBuilder、StringBuffer 的区别"></a>4. String 和 StringBuilder、StringBuffer 的区别</h2><h3 id="（1）-可变性"><a href="#（1）-可变性" class="headerlink" title="（1） 可变性"></a>（1） 可变性</h3><p>上文提到，String 类中使用 final 关键字修饰字符数组来保存字符串，<code>private final char value[]</code>，所以 String 对象是不可变的。</p>
+<p>但StringBuilder 与 StringBuffer 都继承自 AbstractStringBuilder 类，在 AbstractStringBuilder 中也是使用字符数组保存字符串<code>char[]value</code> 但是没有用 final 关键字修饰，StringBuilder 与 StringBuffer 的构造方法都是调用父类构造方法，所以这两种对象都是可变的。AbstractStringBuilder 的源码如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">abstract</span> <span class="class"><span class="keyword">class</span> <span class="title">AbstractStringBuilder</span> <span class="keyword">implements</span> <span class="title">Appendable</span>, <span class="title">CharSequence</span> </span>&#123;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * The value is used for character storage.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">char</span>[] value;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * The count is the number of characters used.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">int</span> count;</span><br><span class="line">    ...</span><br></pre></td></tr></table></figure>
+
+<h3 id="（2）线程安全性"><a href="#（2）线程安全性" class="headerlink" title="（2）线程安全性"></a>（2）线程安全性</h3><p>String 中的对象是不可变的，也就可以理解为常量，线程安全。AbstractStringBuilder 是 StringBuilder 与 StringBuffer 的公共父类，定义了一些字符串的基本操作，如 expandCapacity、append、insert、indexOf 等公共方法。</p>
+<p>StringBuffer 对方法加了同步锁或者对调用的方法加了同步锁 synchronized，所以是线程安全的。StringBuilder 并没有对方法进行加同步锁，所以是非线程安全的。源码如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// StringBuffer 截取部分源码</span></span><br><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">synchronized</span> StringBuffer <span class="title">append</span><span class="params">(String str)</span> </span>&#123;</span><br><span class="line">    toStringCache = <span class="keyword">null</span>;</span><br><span class="line">    <span class="keyword">super</span>.append(str);</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">this</span>;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// StringBuilder 截取部分源码</span></span><br><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> StringBuilder <span class="title">append</span><span class="params">(String str)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">super</span>.append(str);</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">this</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="（3）性能"><a href="#（3）性能" class="headerlink" title="（3）性能"></a>（3）性能</h3><p>因为 String 类型是不可变的，所以每次对 String 类型进行改变的时候，都会生成一个新的 String 对象，然后将引用指向新的 String 对象。StringBuffer 每次都会对 StringBuffer 对象本身进行操作，而不是生成新的对象并改变对象引用。相同情况下使用 StringBuilder 相比使用 StringBuffer 性能更高一些，但却线程不安全的风险，因而我们可以再非并发操作的环境下使用 StringBuilder 操作字符串。</p>
+<h3 id="（4）对于三者使用的总结"><a href="#（4）对于三者使用的总结" class="headerlink" title="（4）对于三者使用的总结"></a>（4）对于三者使用的总结</h3><pre><code>- 操作少量的数据: 适用 String
+- 单线程操作字符串缓冲区下操作大量数据: 适用 StringBuilder
+- 多线程操作字符串缓冲区下操作大量数据: 适用 StringBuffer</code></pre><h2 id="5-String-在-JVM（Java虚拟机）中是如何存储的？"><a href="#5-String-在-JVM（Java虚拟机）中是如何存储的？" class="headerlink" title="5. String 在 JVM（Java虚拟机）中是如何存储的？"></a>5. String 在 JVM（Java虚拟机）中是如何存储的？</h2><p>String常见的创建方式有两种，直接赋值的方式<code>Strings1 = &quot;Java&quot;;</code>和<code>Strings2 = new String(&quot;Java&quot;);</code>的方式，但两者在JVM的存储区域却截然不同，在JDK1.8中，变量 s1 会先去<strong>字符串常量池</strong>中找字符串“Java”，如果有相同的字符则直接返回<strong>常量句柄</strong>（一个唯一的整数，作为对象的身份id, 区分不同的对象和同类中的不同实例），如果没有此字符串则会先在常量池中创建此字符串，然后再返回常量句柄；而变量 s2 是直接在堆上创建一个变量，如果调用 intern 方法才会把此字符串保存到常量池中，它们在 JVM 中的存储位置如下图所示：</p>
+<p><img src="../pictures/image-20200405194407416.png" alt="image-20200405194407416"></p>
+<p>代码演示如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Strings1 = newString(<span class="string">"Java"</span>);</span><br><span class="line">Strings2 = s1.intern();</span><br><span class="line">Strings3 = <span class="string">"Java"</span>;</span><br><span class="line">System.out.println(s1 == s2); <span class="comment">// false</span></span><br><span class="line">System.out.println(s2 == s3); <span class="comment">// true</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="6-String-的-intern-方法有什么含义"><a href="#6-String-的-intern-方法有什么含义" class="headerlink" title="6. String 的 intern 方法有什么含义?"></a>6. String 的 intern 方法有什么含义?</h2><p>public String <strong>intern</strong>() 返回字符串对象的规范化表示形式，返回值是一个字符串，内容与此字符串相等，但它保证来自字符串池中。</p>
+<p>一个初始为空的字符串池，它由类 String 私有地维护。当调用 intern 方法时，如果字符串池中已经包含一个等于此 String 对象的字符串（是否等于由 String 的 equals 方法来确定），则返回池中的字符串；否则将此 String 对象添加到池中，并且返回此 String 对象的引用。所有的字面值字符串和字符串赋值常量表达式都是内部的。</p>
+<p>如下例子中，变量 str1 会先去字符串常量池中找字符串 “ab”, 如果有相同的字符串则直接返回常量句柄，如果没有此字符串则会先在常量池中创建此字符串，然后再返回常量句柄；而变量 str2 是直接在堆上创建一个变量，如果调用 intern 方法才会把此字符串保存到常量池中。</p>
+<p>字符串相加的时候，都是静态字符串的结果会添加到字符串池，如果其中含有变量（如 str3 str4）则不会进入字符串池中。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">String str1 = <span class="string">"ab"</span>;</span><br><span class="line">String str2 = <span class="keyword">new</span> String(<span class="string">"ab"</span>);</span><br><span class="line">System.out.println(str1 == str2);           <span class="comment">//false 引用地址不同</span></span><br><span class="line">System.out.println(str1.equals(str2));      <span class="comment">//true 字符串值相同</span></span><br><span class="line">System.out.println(str1 == str2.intern());  <span class="comment">//true</span></span><br><span class="line">String str3 = <span class="string">"a"</span>;</span><br><span class="line">String str4 = <span class="string">"b"</span>;</span><br><span class="line">System.out.println(str3 + str4 == str1);    <span class="comment">//false</span></span><br><span class="line">System.out.println(<span class="string">"a"</span> + <span class="string">"b"</span> == str1);      <span class="comment">//true</span></span><br></pre></td></tr></table></figure>
+
+<p>前文中说明了 equals 和 == 的区别，对于 String 而言，== 判断的是引用地址，那么什么时候会出现引用地址相同的情况呢？现在来看，如果给变量赋值的是静态字符串，就会在字符串中找相同字符串，如果有返回引用，这时候就存在相同的引用地址；而 new String 构造的字符串用 == 判断一定是 false。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">String str5 = <span class="keyword">new</span> String(<span class="string">"ab"</span>);</span><br><span class="line">System.out.println(str2 == str5);           <span class="comment">//false</span></span><br><span class="line">String str6 = <span class="string">"ab"</span>;</span><br><span class="line">System.out.println(str1 ==str6);            <span class="comment">//true</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="7-String-的不可变"><a href="#7-String-的不可变" class="headerlink" title="7. String 的不可变"></a>7. String 的不可变</h2><p>String 对象是不可变的。从 JDK 文档可以发现，String 类中每一个看起来会修改 String 值的方法，实际上都是创建了一个全新的 String 对象来包含修改后的字符串内容，而最初的 String 对象纹丝未动。</p>
+<p>例如下面的代码：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> String <span class="title">upcase</span><span class="params">(String s)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> s.toUpperCase();</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">    String q = <span class="string">"howdy"</span>;</span><br><span class="line">    System.out.println(q); <span class="comment">// howdy </span></span><br><span class="line">    String qq = upcase(q);</span><br><span class="line">    System.out.println(qq); <span class="comment">// HOWDY </span></span><br><span class="line">    System.out.println(q); <span class="comment">// howdy </span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>当把 <code>q</code>传递给<code>upcase()</code>方法时，实际传递的是引用的一个拷贝。每当 String 对象作为方法的参数时，都会复制一份引用，而该引用所指的对象一直在物理位置上没有任何变化。</p>
+<p>回到 upcase() 的定义，传入其中的引用有了名字 s, 只有 upcase() 方法运行时局部引用 s 才存在。一旦 upcase() 结束，s 就消失了。其返回值也就指向了一个新的对象，而 q 仍然在原来的位置。</p>
+<h2 id="8-的重载与-StringBuilder"><a href="#8-的重载与-StringBuilder" class="headerlink" title="8. + 的重载与 StringBuilder"></a>8. + 的重载与 StringBuilder</h2><p>String 对象是不可变的，你可以给一个 String 对象添加任意多的别名，因为 String 是只读的，所以指向它的任何引用都不可能修改它的值，这样也就不会影响到其他引用。</p>
+<p>不可变性会带来一定的效率问题。为 String 对象重载的 + 操作符就是一个例子：操作符 + 可以连接 String。当使用 + 操作符时，编译器会做一定的优化，例如在下面的代码中：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">String mango = <span class="string">"mango"</span>; </span><br><span class="line">String s = <span class="string">"abc"</span> + mango + <span class="string">"def"</span> + <span class="number">47</span>;</span><br></pre></td></tr></table></figure>
+
+<p>编译器会自动引入<code>java.lang.StringBuilder</code>类（虽然源代码中并没有使用 StringBuilder 类，但因为其高效，编译器会使用它），先创建一个 StringBuilder 对象，对每个字符串调用一次 append 方法，共4次，最后调用 toString() 方法，存为 s。</p>
+<p>现在你可能觉得可以随意使用 String 对象，反正编译器会为你做性能优化。在这之前让我们深入看看编译器会为我们优化到什么程度。下面例子中采用两种方式生成 String：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">WhitherStringBuilder</span> </span>&#123; </span><br><span class="line">    <span class="function"><span class="keyword">public</span> String <span class="title">implicit</span><span class="params">(String[] fields)</span> </span>&#123; </span><br><span class="line">        String result = <span class="string">""</span>; </span><br><span class="line">        <span class="keyword">for</span>(String field : fields) &#123; </span><br><span class="line">            result += field;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> result; </span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> String <span class="title">explicit</span><span class="params">(String[] fields)</span> </span>&#123; </span><br><span class="line">        StringBuilder result = <span class="keyword">new</span> StringBuilder(); </span><br><span class="line">        <span class="keyword">for</span>(String field : fields) &#123; </span><br><span class="line">            result.append(field); </span><br><span class="line">        &#125; </span><br><span class="line">        <span class="keyword">return</span> result.toString(); </span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>第一种方式中，StringBuilder 是在循环体内部创建的，这意味着每进行一次循环，就会创建一个 StringBuilder 对象。第二种显示定义 StringBuilder 只生成一个 StringBuilder 对象。因此如果使用循环，且可能存在性能问题，那么最好自己创建一个 StringBuilder 对象。</p>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>Post author:  </strong>Julia Jiang
+  </li>
+  <li class="post-copyright-link">
+    <strong>Post link: </strong>
+    <a href="https://juliajiang.github.io/2020/04/04/String%E7%9A%84%E7%89%B9%E7%82%B9%E4%BB%A5%E5%8F%8A%E6%96%B9%E6%B3%95/" title="String的特点以及方法">https://juliajiang.github.io/2020/04/04/String的特点以及方法/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>Copyright Notice:  </strong>All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA</a> unless stating additionally.
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/String/" rel="tag"># String</a>
+              <a href="/tags/Java/" rel="tag"># Java</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/03/28/hello-world/" rel="prev" title="Hello World">
+      <i class="fa fa-chevron-left"></i> Hello World
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/04/05/HashMap%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86%E5%8F%8A%E5%85%B6%E9%87%8D%E8%A6%81%E6%96%B9%E6%B3%95/" rel="next" title="HashMap实现原理及其重要方法">
+      HashMap实现原理及其重要方法 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-String-如何实现"><span class="nav-text">1. String 如何实现</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-String-源码中的几个重要方法"><span class="nav-text">2. String 源码中的几个重要方法</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-多构造方法"><span class="nav-text">2.1 多构造方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-2-equals-比较两个字符串是否相等"><span class="nav-text">2.2 equals() 比较两个字符串是否相等</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-3-compareTo-比较两个字符串"><span class="nav-text">2.3 compareTo() 比较两个字符串</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-4-其他重要方法"><span class="nav-text">2.4 其他重要方法</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-为什么-String-类型用-final-修饰？"><span class="nav-text">3. 为什么 String 类型用 final 修饰？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-String-和-StringBuilder、StringBuffer-的区别"><span class="nav-text">4. String 和 StringBuilder、StringBuffer 的区别</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#（1）-可变性"><span class="nav-text">（1） 可变性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#（2）线程安全性"><span class="nav-text">（2）线程安全性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#（3）性能"><span class="nav-text">（3）性能</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#（4）对于三者使用的总结"><span class="nav-text">（4）对于三者使用的总结</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-String-在-JVM（Java虚拟机）中是如何存储的？"><span class="nav-text">5. String 在 JVM（Java虚拟机）中是如何存储的？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-String-的-intern-方法有什么含义"><span class="nav-text">6. String 的 intern 方法有什么含义?</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-String-的不可变"><span class="nav-text">7. String 的不可变</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-的重载与-StringBuilder"><span class="nav-text">8. + 的重载与 StringBuilder</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Julia Jiang"
+      src="/images/icon.jpg">
+  <p class="site-author-name" itemprop="name">Julia Jiang</p>
+  <div class="site-description" itemprop="description">If a thing is worth doing, it's worth doing well</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">3</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">1</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/JuliaJiang7" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;JuliaJiang7" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/julia.jiang.fan@gmail.com" title="E-Mail → julia.jiang.fan@gmail.com"><i class="fa fa-fw fa-envelope"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://instagram.com/juliajiangf" title="Instagram → https:&#x2F;&#x2F;instagram.com&#x2F;juliajiangf" rel="noopener" target="_blank"><i class="fa fa-fw fa-instagram"></i></a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Julia Jiang</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    <span title="Symbols count total">21k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">19 mins.</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
