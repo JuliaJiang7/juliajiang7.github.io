@@ -492,5 +492,5 @@ static final int tableSizeFor(int cap) {
 }
 ```
 
-更多关于 HashMap 的知识点参考 [这里]([https://snailclimb.gitee.io/javaguide-interview/#/./docs/b-2Java%E9%9B%86%E5%90%88?id=_226-hashmap-%e5%92%8c-hashset%e5%8c%ba%e5%88%ab](https://snailclimb.gitee.io/javaguide-interview/#/./docs/b-2Java集合?id=_226-hashmap-和-hashset区别))
+更多关于 HashMap 的知识点参考 [这里](https://snailclimb.gitee.io/javaguide-interview/#/./docs/b-2Java集合?id=_226-hashmap-和-hashset区别)
 
