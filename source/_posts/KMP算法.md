@@ -14,7 +14,7 @@ typora-copy-images-to: ..\pictures
 
 ### 1.1 简介
 
-**字符串匹配** 是计算机的基本任务之一。举例来说，即有一个字符串"BBC ABCDAB ABCDABCDABDE"，判断该字符串中是否包含另一个字符串"ABCDABD"？许多算法可以完成这个任务，[Knuth-Morris-Pratt算法]([https://zh.wikipedia.org/wiki/%E5%85%8B%E5%8A%AA%E6%96%AF-%E8%8E%AB%E9%87%8C%E6%96%AF-%E6%99%AE%E6%8B%89%E7%89%B9%E7%AE%97%E6%B3%95](https://zh.wikipedia.org/wiki/克努斯-莫里斯-普拉特算法))（简称KMP）是最常用的之一。它以三个发明者命名，其中K代表著名科学家Donald Knuth。
+**字符串匹配** 是计算机的基本任务之一。举例来说，即有一个字符串"BBC ABCDAB ABCDABCDABDE"，判断该字符串中是否包含另一个字符串"ABCDABD"？许多算法可以完成这个任务，[Knuth-Morris-Pratt算法](https://zh.wikipedia.org/wiki/克努斯-莫里斯-普拉特算法)（简称KMP）是最常用的之一。它以三个发明者命名，其中K代表著名科学家Donald Knuth。KMP算法可在一个字符串S内查找一个词P的出现位置，如果有返回P的起始索引，否则返回-1.
 
 接下来，我会先举例对KMP算法的思路进行解释（不涉及任何代码）。
 
@@ -283,7 +283,94 @@ public int[] getNextval(char[] p){
 
 所以，如果文本串的长度为n，模式串的长度为m，那么匹配过程的时间复杂度为O(n)，算上计算next的O(m)时间，KMP的整体时间复杂度为O(m + n)。
 
-## 4. 参考文献
+## 4. 例题：实现 strStr() [28]
+
+题目来源：[28. 实现 strStr()](https://leetcode-cn.com/problems/implement-strstr/)；另一种动态规划在我的另一篇博客：[这里]().
+
+### 题目描述
+
+实现 strStr() 函数。
+
+给定一个 haystack 字符串和一个 needle 字符串，在 haystack 字符串中找出 needle 字符串出现的第一个位置 (从0开始)。如果不存在，则返回  -1。
+
+示例 1:
+
+```bash
+输入: haystack = "hello", needle = "ll"
+输出: 2
+```
+
+示例 2:
+
+```bash
+输入: haystack = "aaaaa", needle = "bba"
+输出: -1
+```
+
+
+说明:
+
+当 needle 是空字符串时，我们应当返回什么值呢？这是一个在面试中很好的问题。
+
+对于本题而言，当 needle 是空字符串时我们应当返回 0 。这与C语言的 strstr() 以及 Java的 indexOf() 定义相符。
+
+### 代码
+
+````java
+public int strStr(String haystack, String needle) {
+    if(needle.length() == 0){return 0;}
+    char[] s = haystack.toCharArray();
+    char[] p = needle.toCharArray();
+    int[] next = getNextval(p);
+    return kmp(s, p, next);
+}
+
+private int kmp(char[] s, char[] p, int[] next){
+    int i = 0, j = 0;
+    int sLen = s.length;
+    int pLen = p.length;
+    while (i < sLen && j < pLen){
+        if(j == -1 || s[i] == p[j]){
+            i++;
+            j++;
+        }else{
+            j = next[j];
+        }
+    }
+    if(j == pLen){
+        return i - j;
+    }else{
+        return -1;
+    }
+}
+
+private int[] getNextval(char[] p){
+    int pLen = p.length;
+    int[] next = new int[pLen];
+    next[0] = -1;
+    int k = -1;
+    int j = 0;
+    while (j < pLen - 1){
+        // p[k] 表示前缀；p[j] 表示后缀
+        if(k == -1 || p[j] == p[k]){
+            ++k;
+            ++j;
+            if(p[j] != p[k]){
+                next[j] = k;
+            }else{
+                // 因为不能出现p[j] = p[next[j]]，所以当出现时需要继续递归，k = next[k] = next[next[k]]
+                next[j] = next[k];
+            }
+
+        }else{
+            k = next[k];
+        }
+    }
+    return next;
+}
+````
+
+## 5. 参考文献
 
 1. https://blog.csdn.net/v_july_v/article/details/7041827
 
