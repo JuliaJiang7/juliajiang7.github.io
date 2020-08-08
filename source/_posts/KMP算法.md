@@ -4,6 +4,7 @@ date: 2020-07-17 16:17:33
 tags:
   - String
   - Algorithm
+  - KMP
 categories: Algorithm
 typora-copy-images-to: ..\pictures
 ---
