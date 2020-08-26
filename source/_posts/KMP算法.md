@@ -1,6 +1,6 @@
 ---
 title: KMP算法
-date: 2020-07-17 16:17:33
+date: 2020-07-16 16:17:33
 tags:
   - String
   - Algorithm

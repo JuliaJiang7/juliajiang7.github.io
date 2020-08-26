@@ -9,7 +9,9 @@
 
   <div class="posts-expand">
     {%- for post in page.posts.toArray() %}
+	  {% if post.visible !== 'hide' %}
       {{ partial('_macro/post.swig', {post: post, is_index: true}) }}
+	  {% endif %}
     {%- endfor %}
   </div>
 
