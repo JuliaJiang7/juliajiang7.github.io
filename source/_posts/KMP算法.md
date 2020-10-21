@@ -1,6 +1,6 @@
 ---
 title: KMP算法
-date: 2020-07-16 16:17:33
+date: 2020-09-27 16:17:33
 tags:
   - String
   - Algorithm
@@ -371,7 +371,7 @@ private int[] getNextval(char[] p){
 }
 ````
 
-## 5. 参考文献
+## 5. 参考引用
 
 1. https://blog.csdn.net/v_july_v/article/details/7041827
 

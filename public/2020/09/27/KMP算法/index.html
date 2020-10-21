@@ -23,7 +23,7 @@
   <meta name="description" content="本文主要介绍了 KMP算法的基本思想、代码、优化以及时间复杂度分析。 1. KMP算法思想1.1 简介字符串匹配 是计算机的基本任务之一。举例来说，即有一个字符串”BBC ABCDAB ABCDABCDABDE”，判断该字符串中是否包含另一个字符串”ABCDABD”？许多算法可以完成这个任务，Knuth-Morris-Pratt算法（简称KMP）是最常用的之一。它以三个发明者命名，其中K代表著名科">
 <meta property="og:type" content="article">
 <meta property="og:title" content="KMP算法">
-<meta property="og:url" content="https://www.juliajiang.top/2020/07/16/KMP%E7%AE%97%E6%B3%95/index.html">
+<meta property="og:url" content="https://www.juliajiang.top/2020/09/27/KMP%E7%AE%97%E6%B3%95/index.html">
 <meta property="og:site_name" content="Julia Jiang&#39;s Blog">
 <meta property="og:description" content="本文主要介绍了 KMP算法的基本思想、代码、优化以及时间复杂度分析。 1. KMP算法思想1.1 简介字符串匹配 是计算机的基本任务之一。举例来说，即有一个字符串”BBC ABCDAB ABCDABCDABDE”，判断该字符串中是否包含另一个字符串”ABCDABD”？许多算法可以完成这个任务，Knuth-Morris-Pratt算法（简称KMP）是最常用的之一。它以三个发明者命名，其中K代表著名科">
 <meta property="og:locale" content="en_US">
@@ -48,8 +48,8 @@
 <meta property="og:image" content="https://www.juliajiang.top/pictures/20140729181940812">
 <meta property="og:image" content="https://www.juliajiang.top/pictures/8394323_1308075859Zfue.jpg">
 <meta property="og:image" content="https://www.juliajiang.top/pictures/8394323_13080758591kyV-1595069195969.jpg">
-<meta property="article:published_time" content="2020-07-16T08:17:33.000Z">
-<meta property="article:modified_time" content="2020-08-24T02:59:47.588Z">
+<meta property="article:published_time" content="2020-09-27T08:17:33.000Z">
+<meta property="article:modified_time" content="2020-10-21T06:47:59.039Z">
 <meta property="article:author" content="Julia Jiang">
 <meta property="article:tag" content="String">
 <meta property="article:tag" content="Algorithm">
@@ -57,7 +57,7 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https://www.juliajiang.top/pictures/bg2013050103.png">
 
-<link rel="canonical" href="https://www.juliajiang.top/2020/07/16/KMP%E7%AE%97%E6%B3%95/">
+<link rel="canonical" href="https://www.juliajiang.top/2020/09/27/KMP%E7%AE%97%E6%B3%95/">
 
 
 <script id="page-configurations">
@@ -220,7 +220,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="https://www.juliajiang.top/2020/07/16/KMP%E7%AE%97%E6%B3%95/">
+    <link itemprop="mainEntityOfPage" href="https://www.juliajiang.top/2020/09/27/KMP%E7%AE%97%E6%B3%95/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/icon.jpg">
@@ -243,14 +243,14 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2020-07-16 16:17:33" itemprop="dateCreated datePublished" datetime="2020-07-16T16:17:33+08:00">2020-07-16</time>
+              <time title="Created: 2020-09-27 16:17:33" itemprop="dateCreated datePublished" datetime="2020-09-27T16:17:33+08:00">2020-09-27</time>
             </span>
               <span class="post-meta-item">
                 <span class="post-meta-item-icon">
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-08-24 10:59:47" itemprop="dateModified" datetime="2020-08-24T10:59:47+08:00">2020-08-24</time>
+                <time title="Modified: 2020-10-21 14:47:59" itemprop="dateModified" datetime="2020-10-21T14:47:59+08:00">2020-10-21</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -432,7 +432,7 @@
 <p>对于本题而言，当 needle 是空字符串时我们应当返回 0 。这与C语言的 strstr() 以及 Java的 indexOf() 定义相符。</p>
 <h3 id="代码"><a href="#代码" class="headerlink" title="代码"></a>代码</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">strStr</span><span class="params">(String haystack, String needle)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span>(needle.length() == <span class="number">0</span>)&#123;<span class="keyword">return</span> <span class="number">0</span>;&#125;</span><br><span class="line">    <span class="keyword">char</span>[] s = haystack.toCharArray();</span><br><span class="line">    <span class="keyword">char</span>[] p = needle.toCharArray();</span><br><span class="line">    <span class="keyword">int</span>[] next = getNextval(p);</span><br><span class="line">    <span class="keyword">return</span> kmp(s, p, next);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">int</span> <span class="title">kmp</span><span class="params">(<span class="keyword">char</span>[] s, <span class="keyword">char</span>[] p, <span class="keyword">int</span>[] next)</span></span>&#123;</span><br><span class="line">    <span class="keyword">int</span> i = <span class="number">0</span>, j = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">int</span> sLen = s.length;</span><br><span class="line">    <span class="keyword">int</span> pLen = p.length;</span><br><span class="line">    <span class="keyword">while</span> (i &lt; sLen &amp;&amp; j &lt; pLen)&#123;</span><br><span class="line">        <span class="keyword">if</span>(j == -<span class="number">1</span> || s[i] == p[j])&#123;</span><br><span class="line">            i++;</span><br><span class="line">            j++;</span><br><span class="line">        &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">            j = next[j];</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span>(j == pLen)&#123;</span><br><span class="line">        <span class="keyword">return</span> i - j;</span><br><span class="line">    &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">        <span class="keyword">return</span> -<span class="number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">int</span>[] getNextval(<span class="keyword">char</span>[] p)&#123;</span><br><span class="line">    <span class="keyword">int</span> pLen = p.length;</span><br><span class="line">    <span class="keyword">int</span>[] next = <span class="keyword">new</span> <span class="keyword">int</span>[pLen];</span><br><span class="line">    next[<span class="number">0</span>] = -<span class="number">1</span>;</span><br><span class="line">    <span class="keyword">int</span> k = -<span class="number">1</span>;</span><br><span class="line">    <span class="keyword">int</span> j = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">while</span> (j &lt; pLen - <span class="number">1</span>)&#123;</span><br><span class="line">        <span class="comment">// p[k] 表示前缀；p[j] 表示后缀</span></span><br><span class="line">        <span class="keyword">if</span>(k == -<span class="number">1</span> || p[j] == p[k])&#123;</span><br><span class="line">            ++k;</span><br><span class="line">            ++j;</span><br><span class="line">            <span class="keyword">if</span>(p[j] != p[k])&#123;</span><br><span class="line">                next[j] = k;</span><br><span class="line">            &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">                <span class="comment">// 因为不能出现p[j] = p[next[j]]，所以当出现时需要继续递归，k = next[k] = next[next[k]]</span></span><br><span class="line">                next[j] = next[k];</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">        &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">            k = next[k];</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> next;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<h2 id="5-参考文献"><a href="#5-参考文献" class="headerlink" title="5. 参考文献"></a>5. 参考文献</h2><ol>
+<h2 id="5-参考引用"><a href="#5-参考引用" class="headerlink" title="5. 参考引用"></a>5. 参考引用</h2><ol>
 <li><p><a href="https://blog.csdn.net/v_july_v/article/details/7041827" target="_blank" rel="noopener">https://blog.csdn.net/v_july_v/article/details/7041827</a></p>
 </li>
 <li><p><a href="http://www.ruanyifeng.com/blog/2013/05/Knuth–Morris–Pratt_algorithm.html" target="_blank" rel="noopener">http://www.ruanyifeng.com/blog/2013/05/Knuth%E2%80%93Morris%E2%80%93Pratt_algorithm.html</a></p>
@@ -453,7 +453,7 @@
   </li>
   <li class="post-copyright-link">
     <strong>Post link: </strong>
-    <a href="https://www.juliajiang.top/2020/07/16/KMP%E7%AE%97%E6%B3%95/" title="KMP算法">https://www.juliajiang.top/2020/07/16/KMP算法/</a>
+    <a href="https://www.juliajiang.top/2020/09/27/KMP%E7%AE%97%E6%B3%95/" title="KMP算法">https://www.juliajiang.top/2020/09/27/KMP算法/</a>
   </li>
   <li class="post-copyright-license">
     <strong>Copyright Notice:  </strong>All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA</a> unless stating additionally.
@@ -475,13 +475,10 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/2020/07/12/%E8%AE%BE%E8%AE%A1%E6%95%B0%E6%8D%AE%E5%BA%93%E7%9A%84%E4%B8%80%E4%BA%9B%E8%AE%A4%E8%AF%86/" rel="prev" title="设计数据库的一些认识">
-      <i class="fa fa-chevron-left"></i> 设计数据库的一些认识
+    <a href="/2020/09/11/%E5%8A%A8%E6%80%81%E8%A7%84%E5%88%92%E6%80%BB%E7%BB%93/" rel="prev" title="动态规划总结">
+      <i class="fa fa-chevron-left"></i> 动态规划总结
     </a></div>
-      <div class="post-nav-item">
-    <a href="/2020/07/23/JSON%E4%B8%8EJava%E5%AF%B9%E8%B1%A1%E7%9A%84%E8%BD%AC%E6%8D%A2/" rel="next" title="JSON与Java对象的转换">
-      JSON与Java对象的转换 <i class="fa fa-chevron-right"></i>
-    </a></div>
+      <div class="post-nav-item"></div>
     </div>
       </footer>
     
@@ -541,7 +538,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-KMP算法思想"><span class="nav-text">1. KMP算法思想</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-1-简介"><span class="nav-text">1.1 简介</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-2-基本思路"><span class="nav-text">1.2 基本思路</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-KMP算法代码及优化"><span class="nav-text">2. KMP算法代码及优化</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-暴力匹配算法"><span class="nav-text">2.1 暴力匹配算法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-2-KMP算法"><span class="nav-text">2.2 KMP算法</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#2-2-1-求解-next-数组"><span class="nav-text">2.2.1 求解 next 数组</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#2-2-1-1-基本思路"><span class="nav-text">2.2.1.1 基本思路</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#2-2-1-2-代码计算-next-数组"><span class="nav-text">2.2.1.2 代码计算 next 数组</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#2-2-1-3-总结-next-数组含义"><span class="nav-text">2.2.1.3 总结 next 数组含义</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-2-2-KMP-算法"><span class="nav-text">2.2.2 KMP 算法</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-2-3-next-数组的优化"><span class="nav-text">2.2.3 next 数组的优化</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-KMP-算法时间复杂度分析"><span class="nav-text">3. KMP 算法时间复杂度分析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-例题：实现-strStr-28"><span class="nav-text">4. 例题：实现 strStr() [28]</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#题目描述"><span class="nav-text">题目描述</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#代码"><span class="nav-text">代码</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-参考文献"><span class="nav-text">5. 参考文献</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-KMP算法思想"><span class="nav-text">1. KMP算法思想</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-1-简介"><span class="nav-text">1.1 简介</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-2-基本思路"><span class="nav-text">1.2 基本思路</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-KMP算法代码及优化"><span class="nav-text">2. KMP算法代码及优化</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-暴力匹配算法"><span class="nav-text">2.1 暴力匹配算法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-2-KMP算法"><span class="nav-text">2.2 KMP算法</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#2-2-1-求解-next-数组"><span class="nav-text">2.2.1 求解 next 数组</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#2-2-1-1-基本思路"><span class="nav-text">2.2.1.1 基本思路</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#2-2-1-2-代码计算-next-数组"><span class="nav-text">2.2.1.2 代码计算 next 数组</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#2-2-1-3-总结-next-数组含义"><span class="nav-text">2.2.1.3 总结 next 数组含义</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-2-2-KMP-算法"><span class="nav-text">2.2.2 KMP 算法</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-2-3-next-数组的优化"><span class="nav-text">2.2.3 next 数组的优化</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-KMP-算法时间复杂度分析"><span class="nav-text">3. KMP 算法时间复杂度分析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-例题：实现-strStr-28"><span class="nav-text">4. 例题：实现 strStr() [28]</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#题目描述"><span class="nav-text">题目描述</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#代码"><span class="nav-text">代码</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-参考引用"><span class="nav-text">5. 参考引用</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -634,12 +631,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="Symbols count total">143k</span>
+    <span title="Symbols count total">145k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="Reading time total">2:10</span>
+    <span title="Reading time total">2:12</span>
 </div>
   <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a>
   </div>

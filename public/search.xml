@@ -1,252 +1,167 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
-    <title>贪心算法总结</title>
-    <url>/2020/09/11/%E8%B4%AA%E5%BF%83%E7%AE%97%E6%B3%95%E6%80%BB%E7%BB%93/</url>
-    <content><![CDATA[<p>本文主要介绍了贪心算法以及 LeetCode 的相关题目。</p>
-<h2 id="1-什么是贪心算法？"><a href="#1-什么是贪心算法？" class="headerlink" title="1. 什么是贪心算法？"></a>1. 什么是贪心算法？</h2><p><a href="https://zh.wikipedia.org/wiki/%E8%B4%AA%E5%BF%83%E7%AE%97%E6%B3%95" target="_blank" rel="noopener">维基定义</a>：（英语：greedy algorithm），又称<strong>贪婪算法</strong>，是一种在每一步选择中都采取在当前状态下最好或最优（即最有利）的选择，从而希望导致结果是最好或最优的算法。比如在 <a href="https://zh.wikipedia.org/wiki/旅行推销员问题" target="_blank" rel="noopener">旅行推销员问题</a> 中，如果旅行员每次都选择最近的城市，那这就是一种贪心算法。</p>
-<p>贪心算法在有最优子结构的问题中尤为有效。最优子结构的意思是局部最优解能决定全局最优解。简单地说，问题能够分解成子问题来解决，子问题的最优解能递推到最终问题的最优解。</p>
-<p><strong>贪心算法与动态规划的不同在于它对每个子问题的解决方案都做出选择，不能回退。动态规划则会保存以前的运算结果，并根据以前的结果对当前进行选择，有回退功能。</strong></p>
+    <title>KMP算法</title>
+    <url>/2020/09/27/KMP%E7%AE%97%E6%B3%95/</url>
+    <content><![CDATA[<p>本文主要介绍了 KMP算法的基本思想、代码、优化以及时间复杂度分析。</p>
+<h2 id="1-KMP算法思想"><a href="#1-KMP算法思想" class="headerlink" title="1. KMP算法思想"></a>1. KMP算法思想</h2><h3 id="1-1-简介"><a href="#1-1-简介" class="headerlink" title="1.1 简介"></a>1.1 简介</h3><p><strong>字符串匹配</strong> 是计算机的基本任务之一。举例来说，即有一个字符串”BBC ABCDAB ABCDABCDABDE”，判断该字符串中是否包含另一个字符串”ABCDABD”？许多算法可以完成这个任务，<a href="https://zh.wikipedia.org/wiki/克努斯-莫里斯-普拉特算法" target="_blank" rel="noopener">Knuth-Morris-Pratt算法</a>（简称KMP）是最常用的之一。它以三个发明者命名，其中K代表著名科学家Donald Knuth。KMP算法可在一个字符串S内查找一个词P的出现位置，如果有返回P的起始索引，否则返回-1.</p>
+<p>接下来，我会先举例对KMP算法的思路进行解释（不涉及任何代码）。</p>
 <a id="more"></a>
 
-<p>参考 <a href="https://labuladong.gitbook.io/algo/dong-tai-gui-hua-xi-lie/tan-xin-suan-fa-zhi-qu-jian-tiao-du-wen-ti" target="_blank" rel="noopener">这里</a> 给出对于贪心算法的理解：</p>
-<p>什么是贪心算法呢？贪心算法可以认为是动态规划算法的一个特例，相比动态规划，使用贪心算法需要满足更多的条件（贪心选择性质），但是效率比动态规划要高。</p>
-<p>比如说一个算法问题使用暴力解法需要指数级时间，如果能使用动态规划消除重叠子问题，就可以降到多项式级别的时间，如果满足贪心选择性质，那么可以进一步降低时间复杂度，达到线性级别的。</p>
-<p>什么是贪心选择性质呢，简单说就是：每一步都做出一个局部最优的选择，最终的结果就是全局最优。注意哦，这是一种特殊性质，其实只有一部分问题拥有这个性质。</p>
-<p>比如你面前放着 100 张人民币，你只能拿十张，怎么才能拿最多的面额？显然每次选择剩下钞票中面值最大的一张，最后你的选择一定是最优的。</p>
-<p>然而，大部分问题明显不具有贪心选择性质。比如打斗地主，对手出对儿三，按照贪心策略，你应该出尽可能小的牌刚好压制住对方，但现实情况我们甚至可能会出王炸。这种情况就不能用贪心算法，而得使用动态规划解决。</p>
-<h2 id="2-区间调度问题"><a href="#2-区间调度问题" class="headerlink" title="2. 区间调度问题"></a>2. 区间调度问题</h2><p>参考 <a href="https://labuladong.gitbook.io/algo/dong-tai-gui-hua-xi-lie/tan-xin-suan-fa-zhi-qu-jian-tiao-du-wen-ti" target="_blank" rel="noopener">这里</a> .</p>
-<h3 id="2-1-问题描述"><a href="#2-1-问题描述" class="headerlink" title="2.1. 问题描述"></a>2.1. 问题描述</h3><p>首先解决一个很经典的贪心算法问题：区间调度问题（Interval Scheduling）。给出形如 <code>[start, end]</code> 的闭区间，设计一个算法，求出这些区间 <strong>最多有几个互不相交的区间</strong> 。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">intervalSchedule</span><span class="params">(<span class="keyword">int</span>[][] intvs)</span> </span>&#123;&#125;</span><br></pre></td></tr></table></figure>
-
-<p>举个例子，<code>intvs = [[1,3], [2,4], [3,6]]</code>，这些区间最多有 2 个区间互不相交，即 <code>[[1,3], [3,6]]</code>，你的算法应该返回 2。注意边界相同并不算相交。</p>
-<p>这个问题在生活中的应用广泛，比如你今天有好几个活动，每个活动都可以用区间 <code>[start, end]</code> 表示开始和结束的时间，请问你今天<strong>最多能参加几个活动呢？</strong>显然你一个人不能同时参加两个活动，所以说这个问题就是求这些时间区间的最大不相交子集。</p>
-<h3 id="2-2-题目分析"><a href="#2-2-题目分析" class="headerlink" title="2.2. 题目分析"></a>2.2. 题目分析</h3><p>这个问题有许多看起来不错的贪心思路，却都不能得到正确答案。比如说：</p>
-<p>也许我们可以每次选择可选区间中开始最早的那个？但是可能存在某些区间开始很早，但是很长，使得我们错误地错过了一些短的区间。或者我们每次选择可选区间中最短的那个？或者选择出现冲突最少的那个区间？这些方案都能很容易举出反例，不是正确的方案。</p>
-<p>正确的思路其实很简单，可以分为以下三步：</p>
-<ol>
-<li>从区间集合 intvs 中选择一个区间 x，这个 x 是在当前所有区间中<strong>结束最早的</strong>（end 最小）。</li>
-<li>把所有与 x 区间相交的区间从区间集合 intvs 中删除。</li>
-<li>重复步骤 1 和 2，直到 intvs 为空为止。之前选出的那些 x 就是最大不相交子集。</li>
-</ol>
-<p>把这个思路实现成算法的话，可以按每个区间的 <code>end</code> 数值升序排序，因为这样处理之后实现步骤 1 和步骤 2 都方便很多。如下图所示：</p>
-<img src="/pictures/image-20200912154659563.png" alt="image-20200912154659563" style="zoom:67%;" />
-
-<p>前三个区间属于相交区间，count 不用 +1，第四个区间就是一个新的不相交区间，访问到第四个区间时，count 需要+1，并且更新 end。</p>
-<p>这种思路的贪心算法体现在：在上图中，第一个区间和第二个区间属于相交区间，肯定是二选一的，如何选择呢？当然是选择第一个。因为第一个给后面区间的选择留有更大的空间，这就属于当前情况下的最优选择，之后的选择就在这个选择的基础上，进行选择。</p>
-<h3 id="2-3-代码"><a href="#2-3-代码" class="headerlink" title="2.3. 代码"></a>2.3. 代码</h3><p>参考博客的代码，做了一些修改，这样可以和后面两个题统一。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">intervalSchedule</span><span class="params">(<span class="keyword">int</span>[][] intvs)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span>(intvs.length == <span class="number">0</span>)&#123;<span class="keyword">return</span> <span class="number">0</span>;&#125;</span><br><span class="line">    <span class="comment">// 按 end 排序</span></span><br><span class="line">    Arrays.sort(intvs, <span class="keyword">new</span> Comparator&lt;<span class="keyword">int</span>[]&gt;() &#123;</span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">compare</span><span class="params">(<span class="keyword">int</span>[] a, <span class="keyword">int</span>[] b)</span> </span>&#123;</span><br><span class="line">            <span class="keyword">return</span> a[<span class="number">1</span>] - b[<span class="number">1</span>];</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 初始时，至少有一个区间不相交</span></span><br><span class="line">    <span class="keyword">int</span> count = <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">int</span> end = intvs[<span class="number">0</span>][<span class="number">1</span>];</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">1</span>; i &lt; intvs.length; i++)&#123;</span><br><span class="line">        <span class="keyword">if</span>(intvs[i][<span class="number">0</span>] &gt;= end)&#123;</span><br><span class="line">            count++;</span><br><span class="line">            end = intvs[i][<span class="number">1</span>];</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> count;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h2 id="3-无重叠区间-435"><a href="#3-无重叠区间-435" class="headerlink" title="3. 无重叠区间 [435]"></a>3. 无重叠区间 [435]</h2><p>题目来源：<a href="https://leetcode-cn.com/problems/non-overlapping-intervals/" target="_blank" rel="noopener">435. 无重叠区间</a></p>
-<h3 id="3-1-题目描述"><a href="#3-1-题目描述" class="headerlink" title="3.1. 题目描述"></a>3.1. 题目描述</h3><p><img src="/pictures/image-20200912101636226.png" alt="image-20200912101636226"></p>
-<h3 id="3-2-方法一：区间调度算法（推荐）"><a href="#3-2-方法一：区间调度算法（推荐）" class="headerlink" title="3.2. 方法一：区间调度算法（推荐）"></a>3.2. 方法一：区间调度算法（推荐）</h3><p>使用本文第 2 小节的区间调度问题的思路即可。上文中，区间调度问题求的是最多不相交的区间个数，这里求移除几个区间后，区间互不重叠，即就是返回 <code>总的区间数 - 不重叠的区间数</code> 。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">eraseOverlapIntervals</span><span class="params">(<span class="keyword">int</span>[][] intervals)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span>(intervals.length == <span class="number">0</span>)&#123;<span class="keyword">return</span> <span class="number">0</span>;&#125;</span><br><span class="line">    Arrays.sort(intervals, <span class="keyword">new</span> Comparator&lt;<span class="keyword">int</span>[]&gt;() &#123;</span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">compare</span><span class="params">(<span class="keyword">int</span>[] a, <span class="keyword">int</span>[] b)</span> </span>&#123;</span><br><span class="line">            <span class="keyword">return</span> a[<span class="number">1</span>] - b[<span class="number">1</span>];</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;);</span><br><span class="line">    <span class="comment">// 互补重叠的区间数量（能留下的区间数量），初值为 1</span></span><br><span class="line">    <span class="keyword">int</span> count = <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">int</span> end = intervals[<span class="number">0</span>][<span class="number">1</span>];</span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">1</span>; i &lt; intervals.length; i++)&#123;</span><br><span class="line">        <span class="keyword">if</span>(intervals[i][<span class="number">0</span>] &gt;= end)&#123;</span><br><span class="line">            end = intervals[i][<span class="number">1</span>];</span><br><span class="line">            count++;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> intervals.length - count;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h3 id="3-2-方法二：从起点的贪心算法"><a href="#3-2-方法二：从起点的贪心算法" class="headerlink" title="3.2. 方法二：从起点的贪心算法"></a>3.2. 方法二：从起点的贪心算法</h3><p>参考 <a href="https://leetcode-cn.com/problems/non-overlapping-intervals/solution/wu-zhong-die-qu-jian-by-leetcode/" target="_blank" rel="noopener">这里</a> .</p>
-<p>方法一是从终点的贪心算法。这里按照起点对区间进行排序。当按照起点先后顺序考虑区间的时候。我们利用一个 prev 指针追踪刚刚添加到最终列表中的区间。遍历的时候，可能遇到图中的三种情况：</p>
-<p><img src="/pictures/image-20200912104507992.png" alt="image-20200912104507992"></p>
-<ul>
-<li>情况一：当前考虑的两个区间不重叠。在这种情况下，不移除任何区间，将 prev<em>p<strong>r</strong>e**v</em> 赋值为后面的区间，移除区间数量不变。</li>
-<li>情况二：两个区间重叠，后一个区间的终点在前一个终点之前，即前一个区间包含后一个区间。显然，前一个区间的长度更小，会给后面留下更多空间，因此，prev 更新为当前区间，移除区间数量 +1.</li>
-<li>情况三：两个区间重叠，后一个区间的终点在前一个终点之后，这种情况下，我们用贪心策略处理，直接移除后一个区间。（官方解释没看懂…）。我的理解是：这里如果移除前一个区间，会留出 A 的额外空间，但这部分空间是用不到的，不是当前的最优解；但如果移除后一个空间，会留出 B 的额外空间，给后面的区间留下了更多的空间。</li>
-</ul>
-<p>最终代码如下：</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">eraseOverlapIntervals</span><span class="params">(<span class="keyword">int</span>[][] intervals)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span>(intervals.length == <span class="number">0</span>)&#123;<span class="keyword">return</span> <span class="number">0</span>;&#125;</span><br><span class="line">    <span class="comment">// 按照 start 排序</span></span><br><span class="line">    Arrays.sort(intervals, <span class="keyword">new</span> Comparator&lt;<span class="keyword">int</span>[]&gt;() &#123;</span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">compare</span><span class="params">(<span class="keyword">int</span>[] a, <span class="keyword">int</span>[] b)</span> </span>&#123;</span><br><span class="line">            <span class="keyword">return</span> a[<span class="number">0</span>] - b[<span class="number">0</span>];</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;);</span><br><span class="line">    <span class="comment">// prev 指针追踪刚刚添加到最终列表中的区间</span></span><br><span class="line">    <span class="keyword">int</span> prev = <span class="number">0</span>;</span><br><span class="line">    <span class="comment">// 需要移除的数量</span></span><br><span class="line">    <span class="keyword">int</span> count = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">1</span>; i &lt; intervals.length; i++)&#123;</span><br><span class="line">        <span class="keyword">if</span>(intervals[prev][<span class="number">1</span>] &gt; intervals[i][<span class="number">0</span>])&#123;</span><br><span class="line">            <span class="comment">// case 2</span></span><br><span class="line">            <span class="keyword">if</span>(intervals[prev][<span class="number">1</span>] &gt; intervals[i][<span class="number">1</span>])&#123;</span><br><span class="line">                prev = i;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="comment">// case 3</span></span><br><span class="line">            count++;</span><br><span class="line">        &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">            <span class="comment">// case 1</span></span><br><span class="line">            prev = i;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> count;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h2 id="4-用最少数量的箭引爆气球-452"><a href="#4-用最少数量的箭引爆气球-452" class="headerlink" title="4. 用最少数量的箭引爆气球 [452]"></a>4. 用最少数量的箭引爆气球 [452]</h2><p>题目来源：<a href="https://leetcode-cn.com/problems/minimum-number-of-arrows-to-burst-balloons/" target="_blank" rel="noopener">452. 用最少数量的箭引爆气球</a></p>
-<h3 id="4-1-题目描述"><a href="#4-1-题目描述" class="headerlink" title="4.1. 题目描述"></a>4.1. 题目描述</h3><p><img src="/pictures/image-20200912114154510.png" alt="image-20200912114154510"></p>
-<h3 id="4-2-方法一：区间调度算法"><a href="#4-2-方法一：区间调度算法" class="headerlink" title="4.2. 方法一：区间调度算法"></a>4.2. 方法一：区间调度算法</h3><p>参考 [这里]。</p>
-<p>仔细思考后，这个问题和区间调度算法一模一样。如果最多有 n 个不重叠的区间，那么就至少需要 n 个箭头穿透所有区间，如下图所示：</p>
-<img src="/pictures/image-20200912160847665.png" alt="image-20200912160847665" style="zoom: 67%;" />
-
-<p>只是有一点不一样，在 <code>intervalSchedule</code> 算法中，如果两个区间的边界触碰，不算重叠；而按照这道题目的描述，箭头如果碰到气球的边界气球也会爆炸，所以说相当于区间的边界触碰也算重叠：</p>
-<img src="/pictures/image-20200912161028162.png" alt="image-20200912161028162" style="zoom:67%;" />
-
-<p>所以只需要将区间调度算法稍作修改，就可以得到题目代码：</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">findMinArrowShots</span><span class="params">(<span class="keyword">int</span>[][] points)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span>(points.length == <span class="number">0</span>)&#123;<span class="keyword">return</span> <span class="number">0</span>;&#125;</span><br><span class="line">    <span class="comment">// 按照 end 排序</span></span><br><span class="line">    Arrays.sort(points, <span class="keyword">new</span> Comparator&lt;<span class="keyword">int</span>[]&gt;() &#123;</span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">compare</span><span class="params">(<span class="keyword">int</span>[] a, <span class="keyword">int</span>[] b)</span> </span>&#123;</span><br><span class="line">            <span class="keyword">return</span> a[<span class="number">1</span>] - b[<span class="number">1</span>];</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;);</span><br><span class="line">    <span class="comment">// 互不重叠的区间数量（射箭数量，选中第一个区间时，肯定会射一箭）</span></span><br><span class="line">    <span class="keyword">int</span> count = <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">int</span> end = points[<span class="number">0</span>][<span class="number">1</span>];</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">1</span>; i &lt; points.length; i++)&#123;</span><br><span class="line">        <span class="comment">// 注意：这里把首尾相接的视为相交，去掉等号</span></span><br><span class="line">        <span class="keyword">if</span>(points[i][<span class="number">0</span>] &gt; end)&#123;</span><br><span class="line">            end = points[i][<span class="number">1</span>];</span><br><span class="line">            count++;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> count;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h2 id="5-使用贪心算法的题目列表"><a href="#5-使用贪心算法的题目列表" class="headerlink" title="5. 使用贪心算法的题目列表"></a>5. 使用贪心算法的题目列表</h2><p>本文中使用贪心算法解决的 LeetCode 题目列表如下，持续更新中~</p>
-<table>
-<thead>
-<tr>
-<th align="center">#</th>
-<th align="center">Title</th>
-<th align="center">Remark</th>
-</tr>
-</thead>
-<tbody><tr>
-<td align="center">435</td>
-<td align="center"><a href="https://leetcode-cn.com/problems/non-overlapping-intervals/" target="_blank" rel="noopener">无重叠区间</a></td>
-<td align="center">Hard</td>
-</tr>
-<tr>
-<td align="center">452</td>
-<td align="center"><a href="https://leetcode-cn.com/problems/minimum-number-of-arrows-to-burst-balloons/" target="_blank" rel="noopener">用最少数量的箭引爆气球</a></td>
-<td align="center">Hard</td>
-</tr>
-<tr>
-<td align="center">122</td>
-<td align="center"><a href="https://leetcode-cn.com/problems/best-time-to-buy-and-sell-stock-ii/" target="_blank" rel="noopener">买卖股票的最佳时机 II</a></td>
-<td align="center">Hard</td>
-</tr>
-</tbody></table>
-<h2 id="6-买卖股票的最佳时机-II-122"><a href="#6-买卖股票的最佳时机-II-122" class="headerlink" title="6. 买卖股票的最佳时机 II [122]"></a>6. 买卖股票的最佳时机 II [122]</h2><p>题目来源：<a href="https://leetcode-cn.com/problems/best-time-to-buy-and-sell-stock-ii/" target="_blank" rel="noopener">122. 买卖股票的最佳时机 II</a></p>
-<h3 id="6-1-题目描述"><a href="#6-1-题目描述" class="headerlink" title="6.1. 题目描述"></a>6.1. 题目描述</h3><p><img src="/pictures/image-20200911103413418.png" alt="image-20200911103413418"></p>
-<h3 id="6-2-贪心算法"><a href="#6-2-贪心算法" class="headerlink" title="6.2. 贪心算法"></a>6.2. 贪心算法</h3><p>参考 <a href="https://leetcode-cn.com/problems/best-time-to-buy-and-sell-stock-ii/solution/tan-xin-suan-fa-by-liweiwei1419-2/" target="_blank" rel="noopener">这里</a> 的方法二。</p>
-<p>这道题使用贪心算法的流程是这样的：从第 i 天（这里 i &gt;= 1）开始，与第 i - 1 的股价进行比较，如果股价有上升（严格上升），就将升高的股价（ prices[i] - prices[i- 1] ）记入总利润，按照这种算法，得到的结果就是符合题意的最大利润。下面对这个算法进行几点说明：</p>
-<ol>
-<li><p>该算法仅可以用于计算，但计算的过程并不是真正交易的过程，但可以用贪心算法计算题目要求的最大利润。下面说明这个等价性：以 [1, 2, 3, 4] 为例，这 4 天的股价依次上升，按照贪心算法，得到的最大利润是：</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">res =  (prices[<span class="number">3</span>] - prices[<span class="number">2</span>]) + (prices[<span class="number">2</span>] - prices[<span class="number">1</span>]) + (prices[<span class="number">1</span>] - prices[<span class="number">0</span>])</span><br><span class="line">    =  prices[<span class="number">3</span>] - prices[<span class="number">0</span>]</span><br></pre></td></tr></table></figure>
-
-<p>仔细观察上面的式子，按照贪心算法，在索引为 1、2、3 的这三天，我们做的操作应该是买进昨天的，卖出今天的，虽然这种操作题目并不允许，但是它等价于：“在索引为 0 的那一天买入，在索引为 3 的那一天卖出”。</p>
+<h3 id="1-2-基本思路"><a href="#1-2-基本思路" class="headerlink" title="1.2 基本思路"></a>1.2 基本思路</h3><ol>
+<li><p>首先，字符串”BBC ABCDAB ABCDABCDABDE”（称为文本串）的第一个字符与模式串”ABCDABD”的第一个字符，进行比较。因为B与A不匹配，所以搜索词后移一位。</p>
+<img src="/pictures/bg2013050103.png" alt="img" style="zoom:67%;" />
 </li>
-<li><p>解释一下，它为什么叫做贪心算法？</p>
-<p>“贪心算法” 在每一步总是做出在当前看来最好的选择。</p>
-<p>因此，</p>
-<ul>
-<li><p>“贪心算法” 和 “动态规划”、“回溯搜索” 算法一样，完成一件事情，是分步决策的；</p>
+<li><p>因为B与A不匹配，模式串再往后移。</p>
+<img src="/pictures/bg2013050104.png" alt="img" style="zoom:67%;" />
 </li>
-<li><p>“贪心算法” 在每一步总是做出在当前看来最好的选择，我是这样理解 “最好” 这两个字的意思：</p>
-<ul>
-<li>“最好” 的意思往往根据题目而来，可能是 “最小”，也可能是 “最大”；</li>
-</ul>
+<li><p>就这样，直到文本串有一个字符，与模式串的第一个字符相同为止。</p>
+<img src="/pictures/bg2013050105.png" alt="img" style="zoom:67%;" />
 </li>
-<li><p>贪心算法和动态规划相比，它既不看前面（也就是说它不需要从前面的状态转移过来），也不看后面（无后效性，后面的选择不会对前面的选择有影响），因此贪心算法时间复杂度一般是线性的，空间复杂度是常数级别的。</p>
+<li><p>接着比较文本串和模式串的下一个字符，还是相同。</p>
+<img src="/pictures/bg2013050106.png" alt="img" style="zoom:67%;" />
 </li>
-<li><p>这道题 “贪心” 的地方在于，对于 “今天的股价 - 昨天的股价”，得到的结果有 3 种可能：（1）正数（2）0（3）负数。<strong>贪心算法的决策是：只加正数</strong> 。</p>
+<li><p>直到字符串有一个字符，与搜索词对应的字符不相同为止。</p>
+<img src="/pictures/bg2013050107.png" alt="img" style="zoom:67%;" />
 </li>
-</ul>
+<li><p>这时，最自然的反应是，将搜索词整个后移一位，再从头逐个比较。这样做固然可行，但是效率很差，因为你要把”搜索位置”移到已经比较过的位置，重比一遍。</p>
+<img src="/pictures/bg2013050108.png" alt="img" style="zoom:67%;" />
+</li>
+<li><p>一个基本事实是，当空格与D不匹配时，你其实知道前面六个字符是”ABCDAB”。KMP算法的想法是，<strong>设法利用这个已知信息，不要把”搜索位置”移回已经比较过的位置，继续把它向后移，这样就提高了效率</strong>。</p>
+<img src="/pictures/bg2013050107-1594975043794.png" alt="img" style="zoom:67%;" />
+</li>
+<li><p>怎么做到这一点呢？可以针对搜索词，算出一张《部分匹配表》（Partial Match Table）。这张表是如何产生的，后面再介绍，这里只要会用就可以了。</p>
+<img src="/pictures/bg2013050109.png" alt="img" style="zoom:67%;" />
+</li>
+<li><p>已知空格与D不匹配时，前面六个字符”ABCDAB”是匹配的。查表可知，最后一个匹配字符B（不匹配字符的前一个字符）对应的”部分匹配值”为2，因此按照下面的公式算出向后移动的位数：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">移动位数 = 已匹配的字符数 - 失配字符的前一位字符的部分匹配值</span><br></pre></td></tr></table></figure>
+
+<p>因为 6 - 2 等于4，所以将搜索词向后移动4位。</p>
+</li>
+<li><p>因为空格与Ｃ不匹配，搜索词还要继续往后移。这时，已匹配的字符数为2（”AB”），对应的”部分匹配值”为0。所以，移动位数 = 2 - 0，结果为 2，于是将搜索词向后移2位。</p>
+<img src="/pictures/bg2013050110.png" alt="img" style="zoom:67%;" />
+</li>
+<li><p>因为空格与A不匹配，继续后移一位。</p>
+<img src="/pictures/bg2013050111.png" alt="img" style="zoom:67%;" />
+</li>
+<li><p>逐位比较，直到发现C与D不匹配。于是，移动位数 = 6 - 2，继续将搜索词向后移动4位。</p>
+<img src="/pictures/bg2013050112.png" alt="img" style="zoom:67%;" />
+</li>
+<li><p>逐位比较，直到搜索词的最后一位，发现完全匹配，于是搜索完成。如果还要继续搜索（即找出全部匹配），移动位数 = 7 - 0，再将搜索词向后移动7位，这里就不再重复了。</p>
+<img src="/pictures/bg2013050113.png" alt="img" style="zoom: 67%;" />
+</li>
+<li><p>下面介绍《部分匹配表》是如何产生的。</p>
+<p>首先，要了解两个概念：”前缀”和”后缀”。 “前缀”指除了最后一个字符以外，一个字符串的全部头部组合；”后缀”指除了第一个字符以外，一个字符串的全部尾部组合。</p>
+<img src="/pictures/bg2013050114.png" alt="img" style="zoom:67%;" />
+</li>
+<li><p>“部分匹配值”就是”前缀”和”后缀”的最大公共元素长度。以”ABCDABD”为例，计算过程如下：</p>
+<p><img src="/pictures/20140725231726921" alt="img"></p>
+</li>
+<li><p>“部分匹配”的实质是，有时候，字符串头部和尾部会有重复。比如，”ABCDAB”之中有两个”AB”，那么它的”部分匹配值”就是2（”AB”的长度）。搜索词移动的时候，第一个”AB”向后移动4位（字符串长度-部分匹配值），就可以来到第二个”AB”的位置。</p>
+<img src="/pictures/bg2013050112-1594975805920.png" alt="img" style="zoom:67%;" />
+
 </li>
 </ol>
-<p>最终代码如下：</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">maxProfit</span><span class="params">(<span class="keyword">int</span>[] prices)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> res = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">int</span> len = prices.length;</span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; len - <span class="number">1</span>; i++)&#123;</span><br><span class="line">        <span class="keyword">int</span> diff = prices[i + <span class="number">1</span>] - prices[i];</span><br><span class="line">        <span class="keyword">if</span>(diff &gt; <span class="number">0</span>)&#123;</span><br><span class="line">            res += diff;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> res;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>到此，我们对于KMP的基本思路有了一个大致的了解，下一部分介绍KMP具体算法细节、代码及优化。</p>
+<h2 id="2-KMP算法代码及优化"><a href="#2-KMP算法代码及优化" class="headerlink" title="2. KMP算法代码及优化"></a>2. KMP算法代码及优化</h2><p>假设现在我们面临这样一个问题：有一个文本串S，和一个模式串P，现在要查找P在S中的位置，怎么查找呢？</p>
+<h3 id="2-1-暴力匹配算法"><a href="#2-1-暴力匹配算法" class="headerlink" title="2.1 暴力匹配算法"></a>2.1 暴力匹配算法</h3><p>如果用暴力匹配的思路，并假设现在文本串S匹配到 i 位置，模式串P匹配到 j 位置，则有：</p>
+<ul>
+<li>如果当前字符匹配成功（即S[i] == P[j]），则i++，j++，继续匹配下一个字符；</li>
+<li>如果失配（即S[i]! = P[j]），令i = i - (j - 1)，j = 0。相当于每次匹配失败时，i 回溯，j 被置为0。</li>
+</ul>
+<p>暴力匹配代码如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">int</span> <span class="title">ViolentMatch</span><span class="params">(<span class="keyword">char</span>[] s, <span class="keyword">char</span>[] p)</span></span>&#123;</span><br><span class="line">    <span class="keyword">int</span> sLen = s.length;</span><br><span class="line">    <span class="keyword">int</span> pLen = p.length;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">int</span> i = <span class="number">0</span>, j = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">while</span> (i &lt; sLen &amp;&amp; j &lt; pLen)&#123;</span><br><span class="line">        <span class="keyword">if</span>(s[i] == p[j])&#123;</span><br><span class="line">            i++;</span><br><span class="line">            j++;</span><br><span class="line">        &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">            i = i - j + <span class="number">1</span>;</span><br><span class="line">            j = <span class="number">0</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span>(j == pLen)&#123;</span><br><span class="line">        <span class="keyword">return</span> i - j;</span><br><span class="line">    &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">        <span class="keyword">return</span> -<span class="number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<h2 id="7-参考引用"><a href="#7-参考引用" class="headerlink" title="7. 参考引用"></a>7. 参考引用</h2><ol>
-<li><a href="https://zh.wikipedia.org/wiki/%E8%B4%AA%E5%BF%83%E7%AE%97%E6%B3%95" target="_blank" rel="noopener">Wikipedia</a></li>
-<li><a href="https://labuladong.gitbook.io/algo/dong-tai-gui-hua-xi-lie/tan-xin-suan-fa-zhi-qu-jian-tiao-du-wen-ti" target="_blank" rel="noopener">https://labuladong.gitbook.io/algo/dong-tai-gui-hua-xi-lie/tan-xin-suan-fa-zhi-qu-jian-tiao-du-wen-ti</a></li>
-<li><a href="https://leetcode-cn.com/problems/best-time-to-buy-and-sell-stock-ii/solution/tan-xin-suan-fa-by-liweiwei1419-2/" target="_blank" rel="noopener">https://leetcode-cn.com/problems/best-time-to-buy-and-sell-stock-ii/solution/tan-xin-suan-fa-by-liweiwei1419-2/</a></li>
+<h3 id="2-2-KMP算法"><a href="#2-2-KMP算法" class="headerlink" title="2.2 KMP算法"></a>2.2 KMP算法</h3><h4 id="2-2-1-求解-next-数组"><a href="#2-2-1-求解-next-数组" class="headerlink" title="2.2.1 求解 next 数组"></a>2.2.1 求解 next 数组</h4><h5 id="2-2-1-1-基本思路"><a href="#2-2-1-1-基本思路" class="headerlink" title="2.2.1.1 基本思路"></a>2.2.1.1 基本思路</h5><p>前文已经计算过“部分匹配表”，即前缀和后缀的最大公共元素长度，如下图所示：</p>
+<p><img src="/pictures/20140725231726921" alt="img"></p>
+<p>由前文可知，失配时，模式串向右移动的位数公式为：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">移动位数 = 已匹配的字符数 - 失配字符的前一位字符的最大公共元素长度</span><br></pre></td></tr></table></figure>
+
+<p>由此我们发现，当匹配一个字符失配时，我们并不会考虑当前字符，而是看失配字符的前一个字符的最大公共元素长度，如此，便引出了next数组。<strong>next 数组相当于最大长度值整体向右移动一位，然后初值赋为-1.</strong> 因而，对于给定的模式串，它的最大长度及next数组分别如下：</p>
+<p><img src="/pictures/20140728110939595" alt="img"></p>
+<p>求得next数组之后，失配时模式串向右移动的位数为：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">移动位数 = 失配字符所在位置 - 失配字符对应的next值</span><br></pre></td></tr></table></figure>
+
+<h5 id="2-2-1-2-代码计算-next-数组"><a href="#2-2-1-2-代码计算-next-数组" class="headerlink" title="2.2.1.2 代码计算 next 数组"></a>2.2.1.2 代码计算 next 数组</h5><ol>
+<li><p>如果<strong>对于值 k, 已有 p0 p1, …, pk-1 = pj-k pj-k+1, …, pj-1，相当于next[j] = k</strong>。究其本质，<strong>next[j] = k 代表p[j] 之前的模式串子串中，有长度为k 的相同前缀和后缀</strong>。有了这个next 数组，在KMP匹配中，当模式串中 j 处的字符失配时，下一步用next[j]处的字符继续跟文本串匹配，相当于模式串向右移动 j - next[j] 位。</p>
+</li>
+<li><p>下面的问题是：已知next [0, …, j]，如何求出next [j + 1]呢？</p>
+<ul>
+<li><p>若p[k] == p[j]，则next[j + 1] = next [j] + 1 = k + 1。</p>
+<p>如下图所示，假定给定模式串ABCDABCE，且已知next [j] = k（相当于“p0 pk-1” = “pj-k pj-1” = AB，可以看出k为2），现要求next [j + 1]等于多少？因为pk = pj = C，所以next[j + 1] = next[j] + 1 = k + 1（可以看出next[j + 1] = 3）。代表字符E前的模式串中，有长度k+1 的相同前缀后缀。</p>
+<p><img src="/pictures/20140729182154066" alt="img"></p>
+</li>
+<li><p>若p[k ] ≠ p[j]，如果此时 p[next[k] ] == p[j]，则next[ j + 1 ] =  next[k] + 1，否则继续递归前缀索引k = next[k]，而后重复此过程。</p>
+<p>如下图所示，当pk != pj后，字符E前有多大长度的相同前缀后缀呢？很明显，因为C不同于D，所以ABC 跟 ABD不相同，即字符E前的模式串没有长度为k+1的相同前缀后缀，也就不能再简单的令：next[j + 1] = next[j] + 1 。所以，咱们只能去寻找长度更短一点的相同前缀后缀。<br><img src="/pictures/20140729181940812" alt="img">   </p>
+<p>结合上图来讲，若能在前缀“ p0 pk-1 pk ” 中不断的递归前缀索引k = next [k]，找到一个字符pk’ 也为D，代表pk’ = pj，且满足p0 pk’-1 pk’ = pj-k’ pj-1 pj，则最大相同的前缀后缀长度为k’ + 1，从而next [j + 1] = k’ + 1 = next [k’ ] + 1。否则前缀中没有D，则代表没有相同的前缀后缀，next [j + 1] = 0。</p>
+<p>那为何递归前缀索引k = next[k]，就能找到长度更短的相同前缀后缀呢？ 这又归根到next数组的含义。<strong>我们拿前缀 p0 pk-1 pk 去跟后缀pj-k pj-1 pj匹配，如果pk 跟pj 失配，下一步就是用p[next[k]] 去跟pj 继续匹配，如果p[ next[k] ]跟pj还是不匹配，则需要寻找长度更短的相同前缀后缀，即下一步用p[ next[ next[k] ] ]去跟pj匹配。</strong></p>
+</li>
+</ul>
+</li>
+<li><p>综上，可以通过递推求得 next 数组，代码如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">int</span>[] getNext(<span class="keyword">char</span>[] p)&#123;</span><br><span class="line">    <span class="keyword">int</span> pLen = p.length;</span><br><span class="line">    <span class="keyword">int</span>[] next = <span class="keyword">new</span> <span class="keyword">int</span>[pLen];</span><br><span class="line">    next[<span class="number">0</span>] = -<span class="number">1</span>;</span><br><span class="line">    <span class="keyword">int</span> k = -<span class="number">1</span>;</span><br><span class="line">    <span class="keyword">int</span> j = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">while</span> (j &lt; pLen - <span class="number">1</span>)&#123;</span><br><span class="line">        <span class="comment">// p[k] 表示前缀；p[j] 表示后缀</span></span><br><span class="line">        <span class="keyword">if</span>(k == -<span class="number">1</span> || p[j] == p[k])&#123;</span><br><span class="line">            ++k;</span><br><span class="line">            next[++j] = k;</span><br><span class="line">        &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">            k = next[k];</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> next;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+</li>
+</ol>
+<h5 id="2-2-1-3-总结-next-数组含义"><a href="#2-2-1-3-总结-next-数组含义" class="headerlink" title="2.2.1.3 总结 next 数组含义"></a>2.2.1.3 总结 next 数组含义</h5><ol>
+<li>代表失配字符之前的字符串中，有多大长度的相同前缀后缀。</li>
+<li>在某个字符失配后，next 值会告诉你下一步匹配中，模式串应该跳到哪个位置。如果next [j] 等于0或 -1，则跳到模式串的开头字符；若next [j] = k 且 k &gt; 0，代表下次匹配跳到 j 之前的某个字符，而不是跳到开头，且具体跳过了k 个字符。</li>
+</ol>
+<h4 id="2-2-2-KMP-算法"><a href="#2-2-2-KMP-算法" class="headerlink" title="2.2.2 KMP 算法"></a>2.2.2 KMP 算法</h4><p>根据上文的分析，KMP算法的代码如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">kmp</span><span class="params">(<span class="keyword">char</span>[] s, <span class="keyword">char</span>[] p, <span class="keyword">int</span>[] next)</span></span>&#123;</span><br><span class="line">    <span class="keyword">int</span> i = <span class="number">0</span>, j = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">int</span> sLen = s.length;</span><br><span class="line">    <span class="keyword">int</span> pLen = p.length;</span><br><span class="line">    <span class="keyword">while</span> (i &lt; sLen &amp;&amp; j &lt; pLen)&#123;</span><br><span class="line">        <span class="keyword">if</span>(j == -<span class="number">1</span> || s[i] == p[j])&#123;</span><br><span class="line">            i++;</span><br><span class="line">            j++;</span><br><span class="line">        &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">            j = next[j];</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span>(j == pLen)&#123;</span><br><span class="line">        <span class="keyword">return</span> i - j;</span><br><span class="line">    &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">        <span class="keyword">return</span> -<span class="number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="2-2-3-next-数组的优化"><a href="#2-2-3-next-数组的优化" class="headerlink" title="2.2.3 next 数组的优化"></a>2.2.3 next 数组的优化</h4><p>行文至此，我们全面了解了KMP算法的基本思路、流程、代码以及next 数组的求解，但忽略了一个小问题。</p>
+<p>比如，如果用之前的next 数组方法求模式串“abab”的 next 数组，可得其 next 数组为 -1 0 0 1，当它跟下图中的文本串去匹配的时候，发现 b 跟 c 失配，于是模式串右移 j - next[j] = 3 - 1 = 2位。</p>
+<img src="/pictures/8394323_1308075859Zfue.jpg" alt="8394323_1308075859Zfue" style="zoom:67%;" />
+
+<p>右移2位后，b又跟c失配。事实上，因为在上一步的匹配中，已经得知p[3] = b，与s[3] = c失配，而右移两位之后，让p[ next[3] ] = p[1] = b 再跟s[3]匹配时，必然失配。问题出在哪呢？</p>
+<img src="/pictures/8394323_13080758591kyV-1595069195969.jpg" alt="8394323_13080758591kyV" style="zoom:67%;" />
+
+<p>问题出在不该出现p[j] = p[ next[j] ]。为什么呢？理由是：当p[j] != s[i] 时，下次匹配必然是p[ next [j]] 跟s[i]匹配，如果p[j] = p[ next[j] ]，必然导致后一步匹配失败（因为p[j]已经跟s[i]失配，然后你还用跟p[j]等同的值p[next[j]]去跟s[i]匹配，很显然，必然失配），所以不能允许p[j] = p[ next[j ]]。如果出现了p[j] = p[ next[j] ]咋办呢？如果出现了，则需要再次递归，即令next[j] = next[ next[j] ]。</p>
+<p>因此，求解 next 数组的代码优化如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">int</span>[] getNextval(<span class="keyword">char</span>[] p)&#123;</span><br><span class="line">    <span class="keyword">int</span> pLen = p.length;</span><br><span class="line">    <span class="keyword">int</span>[] next = <span class="keyword">new</span> <span class="keyword">int</span>[pLen];</span><br><span class="line">    next[<span class="number">0</span>] = -<span class="number">1</span>;</span><br><span class="line">    <span class="keyword">int</span> k = -<span class="number">1</span>;</span><br><span class="line">    <span class="keyword">int</span> j = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">while</span> (j &lt; pLen - <span class="number">1</span>)&#123;</span><br><span class="line">        <span class="comment">// p[k] 表示前缀；p[j] 表示后缀</span></span><br><span class="line">        <span class="keyword">if</span>(k == -<span class="number">1</span> || p[j] == p[k])&#123;</span><br><span class="line">            ++k;</span><br><span class="line">            ++j;</span><br><span class="line">            <span class="keyword">if</span>(p[j] != p[k])&#123;</span><br><span class="line">                next[j] = k;</span><br><span class="line">            &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">                <span class="comment">// 因为不能出现p[j] = p[next[j]]，所以当出现时需要继续递归，k = next[k] = next[next[k]]</span></span><br><span class="line">                next[j] = next[k];</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">        &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">            k = next[k];</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> next;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="3-KMP-算法时间复杂度分析"><a href="#3-KMP-算法时间复杂度分析" class="headerlink" title="3. KMP 算法时间复杂度分析"></a>3. KMP 算法时间复杂度分析</h2><p>我们先来回顾一下KMP算法的流程，假设现在文本串S匹配到 i 位置，模式串P匹配到 j 位置：</p>
+<ol>
+<li>如果j = -1，或者当前字符匹配成功（即S[i] == P[j]），都令i++，j++，继续匹配下一个字符；</li>
+<li>如果j != -1，且当前字符匹配失败（即S[i] != P[j]），则令 i 不变，j = next[j]。此举意味着失配时，模式串P相对于文本串S向右移动了j - next [j] 位。</li>
+</ol>
+<p>我们发现如果某个字符匹配成功，模式串首字符的位置保持不动，仅仅是i++、j++；如果匹配失配，i 不变（即 i 不回溯），模式串会跳过匹配过的next [j]个字符。整个算法最坏的情况是，当模式串首字符位于i - j的位置时才匹配成功，算法结束。</p>
+<p>所以，如果文本串的长度为n，模式串的长度为m，那么匹配过程的时间复杂度为O(n)，算上计算next的O(m)时间，KMP的整体时间复杂度为O(m + n)。</p>
+<h2 id="4-例题：实现-strStr-28"><a href="#4-例题：实现-strStr-28" class="headerlink" title="4. 例题：实现 strStr() [28]"></a>4. 例题：实现 strStr() [28]</h2><p>题目来源：<a href="https://leetcode-cn.com/problems/implement-strstr/" target="_blank" rel="noopener">28. 实现 strStr()</a>；另一种动态规划在我的另一篇博客：<a href="">这里</a>.</p>
+<h3 id="题目描述"><a href="#题目描述" class="headerlink" title="题目描述"></a>题目描述</h3><p>实现 strStr() 函数。</p>
+<p>给定一个 haystack 字符串和一个 needle 字符串，在 haystack 字符串中找出 needle 字符串出现的第一个位置 (从0开始)。如果不存在，则返回  -1。</p>
+<p>示例 1:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">输入: haystack = <span class="string">"hello"</span>, needle = <span class="string">"ll"</span></span><br><span class="line">输出: 2</span><br></pre></td></tr></table></figure>
+
+<p>示例 2:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">输入: haystack = <span class="string">"aaaaa"</span>, needle = <span class="string">"bba"</span></span><br><span class="line">输出: -1</span><br></pre></td></tr></table></figure>
+
+
+<p>说明:</p>
+<p>当 needle 是空字符串时，我们应当返回什么值呢？这是一个在面试中很好的问题。</p>
+<p>对于本题而言，当 needle 是空字符串时我们应当返回 0 。这与C语言的 strstr() 以及 Java的 indexOf() 定义相符。</p>
+<h3 id="代码"><a href="#代码" class="headerlink" title="代码"></a>代码</h3><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">strStr</span><span class="params">(String haystack, String needle)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span>(needle.length() == <span class="number">0</span>)&#123;<span class="keyword">return</span> <span class="number">0</span>;&#125;</span><br><span class="line">    <span class="keyword">char</span>[] s = haystack.toCharArray();</span><br><span class="line">    <span class="keyword">char</span>[] p = needle.toCharArray();</span><br><span class="line">    <span class="keyword">int</span>[] next = getNextval(p);</span><br><span class="line">    <span class="keyword">return</span> kmp(s, p, next);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">int</span> <span class="title">kmp</span><span class="params">(<span class="keyword">char</span>[] s, <span class="keyword">char</span>[] p, <span class="keyword">int</span>[] next)</span></span>&#123;</span><br><span class="line">    <span class="keyword">int</span> i = <span class="number">0</span>, j = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">int</span> sLen = s.length;</span><br><span class="line">    <span class="keyword">int</span> pLen = p.length;</span><br><span class="line">    <span class="keyword">while</span> (i &lt; sLen &amp;&amp; j &lt; pLen)&#123;</span><br><span class="line">        <span class="keyword">if</span>(j == -<span class="number">1</span> || s[i] == p[j])&#123;</span><br><span class="line">            i++;</span><br><span class="line">            j++;</span><br><span class="line">        &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">            j = next[j];</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span>(j == pLen)&#123;</span><br><span class="line">        <span class="keyword">return</span> i - j;</span><br><span class="line">    &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">        <span class="keyword">return</span> -<span class="number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">int</span>[] getNextval(<span class="keyword">char</span>[] p)&#123;</span><br><span class="line">    <span class="keyword">int</span> pLen = p.length;</span><br><span class="line">    <span class="keyword">int</span>[] next = <span class="keyword">new</span> <span class="keyword">int</span>[pLen];</span><br><span class="line">    next[<span class="number">0</span>] = -<span class="number">1</span>;</span><br><span class="line">    <span class="keyword">int</span> k = -<span class="number">1</span>;</span><br><span class="line">    <span class="keyword">int</span> j = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">while</span> (j &lt; pLen - <span class="number">1</span>)&#123;</span><br><span class="line">        <span class="comment">// p[k] 表示前缀；p[j] 表示后缀</span></span><br><span class="line">        <span class="keyword">if</span>(k == -<span class="number">1</span> || p[j] == p[k])&#123;</span><br><span class="line">            ++k;</span><br><span class="line">            ++j;</span><br><span class="line">            <span class="keyword">if</span>(p[j] != p[k])&#123;</span><br><span class="line">                next[j] = k;</span><br><span class="line">            &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">                <span class="comment">// 因为不能出现p[j] = p[next[j]]，所以当出现时需要继续递归，k = next[k] = next[next[k]]</span></span><br><span class="line">                next[j] = next[k];</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">        &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">            k = next[k];</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> next;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="5-参考引用"><a href="#5-参考引用" class="headerlink" title="5. 参考引用"></a>5. 参考引用</h2><ol>
+<li><p><a href="https://blog.csdn.net/v_july_v/article/details/7041827" target="_blank" rel="noopener">https://blog.csdn.net/v_july_v/article/details/7041827</a></p>
+</li>
+<li><p><a href="http://www.ruanyifeng.com/blog/2013/05/Knuth–Morris–Pratt_algorithm.html" target="_blank" rel="noopener">http://www.ruanyifeng.com/blog/2013/05/Knuth%E2%80%93Morris%E2%80%93Pratt_algorithm.html</a></p>
+</li>
 </ol>
 ]]></content>
       <categories>
         <category>Algorithm</category>
       </categories>
       <tags>
-        <tag>Java</tag>
+        <tag>String</tag>
         <tag>Algorithm</tag>
-        <tag>贪心算法</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>链表总结</title>
-    <url>/2020/08/17/%E9%93%BE%E8%A1%A8%E6%80%BB%E7%BB%93/</url>
-    <content><![CDATA[<p>本文主要总结了 LeetCode 上链表相关的题目，会持续更新~</p>
-<h2 id="1-链表相关的题目列表"><a href="#1-链表相关的题目列表" class="headerlink" title="1. 链表相关的题目列表"></a>1. 链表相关的题目列表</h2><p>本文的题目列表如下：</p>
-<a id="more"></a>
-
-<table>
-<thead>
-<tr>
-<th align="center">#</th>
-<th align="center">Title</th>
-<th align="center">Remark</th>
-</tr>
-</thead>
-<tbody><tr>
-<td align="center">83</td>
-<td align="center"><a href="https://leetcode-cn.com/problems/remove-duplicates-from-sorted-list/" target="_blank" rel="noopener">删除排序链表中的重复元素</a></td>
-<td align="center"></td>
-</tr>
-<tr>
-<td align="center">82</td>
-<td align="center"><a href="https://leetcode-cn.com/problems/remove-duplicates-from-sorted-list-ii/" target="_blank" rel="noopener">删除排序链表中的重复元素 II</a></td>
-<td align="center">Hard</td>
-</tr>
-<tr>
-<td align="center">86</td>
-<td align="center"><a href="https://leetcode-cn.com/problems/partition-list/" target="_blank" rel="noopener">分隔链表</a></td>
-<td align="center"></td>
-</tr>
-<tr>
-<td align="center">2</td>
-<td align="center"></td>
-<td align="center"></td>
-</tr>
-<tr>
-<td align="center">25</td>
-<td align="center"></td>
-<td align="center"></td>
-</tr>
-<tr>
-<td align="center">61</td>
-<td align="center"></td>
-<td align="center"></td>
-</tr>
-<tr>
-<td align="center">206</td>
-<td align="center"><a href="https://leetcode-cn.com/problems/reverse-linked-list/" target="_blank" rel="noopener">反转链表</a></td>
-<td align="center"></td>
-</tr>
-<tr>
-<td align="center">92</td>
-<td align="center"><a href="https://leetcode-cn.com/problems/reverse-linked-list-ii/" target="_blank" rel="noopener">反转链表 II</a></td>
-<td align="center"></td>
-</tr>
-</tbody></table>
-<h2 id="2-删除排序链表中的重复元素-83"><a href="#2-删除排序链表中的重复元素-83" class="headerlink" title="2. 删除排序链表中的重复元素 [83]"></a>2. 删除排序链表中的重复元素 [83]</h2><p>题目来源：<a href="https://leetcode-cn.com/problems/remove-duplicates-from-sorted-list/" target="_blank" rel="noopener">83. 删除排序链表中的重复元素</a></p>
-<h3 id="2-1-题目描述"><a href="#2-1-题目描述" class="headerlink" title="2.1. 题目描述"></a>2.1. 题目描述</h3><p><img src="/pictures/image-20200818094630464.png" alt="image-20200818094630464"></p>
-<h3 id="2-2-方法一：迭代"><a href="#2-2-方法一：迭代" class="headerlink" title="2.2. 方法一：迭代"></a>2.2. 方法一：迭代</h3><p>保存前一个节点 pre, 遇到与 pre 相同的节点就往后移，找到不同的节点，接到 pre 的后面。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> ListNode <span class="title">deleteDuplicates</span><span class="params">(ListNode head)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span>(head == <span class="keyword">null</span> || head.next == <span class="keyword">null</span>)&#123;<span class="keyword">return</span> head;&#125;</span><br><span class="line"></span><br><span class="line">    ListNode pre = head, curr = head.next;</span><br><span class="line">    <span class="keyword">while</span> (curr != <span class="keyword">null</span>)&#123;</span><br><span class="line">        <span class="keyword">while</span> (curr != <span class="keyword">null</span> &amp;&amp; curr.val == pre.val)&#123;</span><br><span class="line">            curr = curr.next;</span><br><span class="line">        &#125;</span><br><span class="line">        pre.next = curr;</span><br><span class="line">        pre = curr;</span><br><span class="line">        <span class="keyword">if</span>(curr != <span class="keyword">null</span>)&#123;</span><br><span class="line">            curr = curr.next;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> head;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h3 id="2-3-方法二：迭代（去掉-pre）"><a href="#2-3-方法二：迭代（去掉-pre）" class="headerlink" title="2.3. 方法二：迭代（去掉 pre）"></a>2.3. 方法二：迭代（去掉 pre）</h3><p>参考 <a href="https://leetcode.wang/leetCode-83-Remove-Duplicates-from-Sorted-List.html" target="_blank" rel="noopener">这里</a> 解法二。这道题其实不用 pre 节点也可以完成，不用找到所有重复的数字进行删除，即遇到一个重复数字，删除一个。这样代码看起来更加简洁了：</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> ListNode <span class="title">deleteDuplicates</span><span class="params">(ListNode head)</span> </span>&#123;</span><br><span class="line">    ListNode cur = head;</span><br><span class="line">    <span class="keyword">while</span> (cur != <span class="keyword">null</span> &amp;&amp; cur.next != <span class="keyword">null</span>)&#123;</span><br><span class="line">        <span class="keyword">if</span>(cur.val == cur.next.val)&#123;</span><br><span class="line">            cur.next = cur.next.next;</span><br><span class="line">        &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">            cur = cur.next;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> head;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h2 id="3-删除排序链表中的重复元素-II-82"><a href="#3-删除排序链表中的重复元素-II-82" class="headerlink" title="3. 删除排序链表中的重复元素 II [82]"></a>3. 删除排序链表中的重复元素 II [82]</h2><p>题目来源：<a href="https://leetcode-cn.com/problems/remove-duplicates-from-sorted-list-ii/" target="_blank" rel="noopener">82. 删除排序链表中的重复元素 II</a></p>
-<h3 id="3-1-题目描述"><a href="#3-1-题目描述" class="headerlink" title="3.1. 题目描述"></a>3.1. 题目描述</h3><p><img src="/pictures/image-20200818100806984.png" alt="image-20200818100806984"></p>
-<p>注意：和上一题相比，本题要求只要是重复的元素需要全部删除，一个不留。</p>
-<h3 id="3-2-迭代"><a href="#3-2-迭代" class="headerlink" title="3.2. 迭代"></a>3.2. 迭代</h3><p>这道题自己写了很久…还是没写出来..</p>
-<p>参考 <a href="https://leetcode.wang/leetCode-82-Remove-Duplicates-from-Sorted-ListII.html" target="_blank" rel="noopener">这里</a> 的解法一。对于链表的操作，如果头结点可能删除，可以使用 dummy 节点，指向 head，最终返回 dummy.next 节点即可，这样可以简化边界问题，不用单独处理。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> ListNode <span class="title">deleteDuplicates</span><span class="params">(ListNode head)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 定义dummy节点</span></span><br><span class="line">    ListNode pre = <span class="keyword">new</span> ListNode(<span class="number">0</span>);</span><br><span class="line">    ListNode dummy = pre;</span><br><span class="line">    pre.next = head;</span><br><span class="line"></span><br><span class="line">    ListNode curr = head;</span><br><span class="line">    <span class="keyword">while</span> (curr != <span class="keyword">null</span> &amp;&amp; curr.next != <span class="keyword">null</span>)&#123;</span><br><span class="line">        <span class="keyword">boolean</span> equal = <span class="keyword">false</span>;</span><br><span class="line">        <span class="comment">// cur 和 cur.next 一直相等，一直后移</span></span><br><span class="line">        <span class="keyword">while</span> (curr.next != <span class="keyword">null</span> &amp;&amp; curr.val == curr.next.val)&#123;</span><br><span class="line">            curr = curr.next;</span><br><span class="line">            equal = <span class="keyword">true</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 如果相等</span></span><br><span class="line">        <span class="comment">// pre.next 直接指向 cur.next 删除所有重复数字</span></span><br><span class="line">        <span class="keyword">if</span>(equal)&#123;</span><br><span class="line">            pre.next = curr.next;</span><br><span class="line"></span><br><span class="line">            <span class="comment">// 如果不相等</span></span><br><span class="line">            <span class="comment">// pre 移到 cur 的地方</span></span><br><span class="line">        &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">            pre = curr;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// cur 后移</span></span><br><span class="line">        curr = curr.next;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> dummy.next;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h2 id="4-分隔链表-86"><a href="#4-分隔链表-86" class="headerlink" title="4. 分隔链表 [86]"></a>4. 分隔链表 [86]</h2><p>题目来源：<a href="https://leetcode-cn.com/problems/partition-list/" target="_blank" rel="noopener">86. 分隔链表</a></p>
-<h3 id="4-1-题目描述"><a href="#4-1-题目描述" class="headerlink" title="4.1. 题目描述"></a>4.1. 题目描述</h3><p><img src="/pictures/image-20200818112245505.png" alt="image-20200818112245505"></p>
-<h3 id="4-2-解法一：分成两个链表"><a href="#4-2-解法一：分成两个链表" class="headerlink" title="4.2. 解法一：分成两个链表"></a>4.2. 解法一：分成两个链表</h3><p>注意链表出现环的情况，参考 <a href="https://leetcode.wang/leetCode-86-Partition-List.html" target="_blank" rel="noopener">这里</a> 的解法二。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> ListNode <span class="title">partition</span><span class="params">(ListNode head, <span class="keyword">int</span> x)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 小于x的链表</span></span><br><span class="line">    ListNode lowDummy = <span class="keyword">new</span> ListNode(<span class="number">0</span>);</span><br><span class="line">    ListNode lowCur = lowDummy;</span><br><span class="line">    <span class="comment">// 大于等于x的链表</span></span><br><span class="line">    ListNode highDummy = <span class="keyword">new</span> ListNode(<span class="number">0</span>);</span><br><span class="line">    ListNode highCur = highDummy;</span><br><span class="line"></span><br><span class="line">    ListNode cur = head;</span><br><span class="line">    <span class="keyword">while</span> (cur != <span class="keyword">null</span>)&#123;</span><br><span class="line">        <span class="keyword">if</span>(cur.val &lt; x)&#123;</span><br><span class="line">            lowCur.next = cur;</span><br><span class="line">            lowCur = lowCur.next;</span><br><span class="line">        &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">            highCur.next = cur;</span><br><span class="line">            highCur = highCur.next;</span><br><span class="line">        &#125;</span><br><span class="line">        cur = cur.next;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 一定要注意添加这一步，不然链表会出现环</span></span><br><span class="line">    highCur.next = <span class="keyword">null</span>;</span><br><span class="line">    <span class="comment">// 链表拼接</span></span><br><span class="line">    lowCur.next = highDummy.next;</span><br><span class="line">    <span class="keyword">return</span> lowDummy.next;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h3 id="4-3-解法二：头插法"><a href="#4-3-解法二：头插法" class="headerlink" title="4.3. 解法二：头插法"></a>4.3. 解法二：头插法</h3><p>遍历整个链表，找到小于 x 的节点，插入到前面。前面和后面都需要一个 pre 节点保存应该插入和删除的位置。（自己想的..）</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> ListNode <span class="title">partition</span><span class="params">(ListNode head, <span class="keyword">int</span> x)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span>(head == <span class="keyword">null</span>)&#123;<span class="keyword">return</span> head;&#125;</span><br><span class="line">    ListNode dummy = <span class="keyword">new</span> ListNode(<span class="number">0</span>);</span><br><span class="line">    dummy.next = head;</span><br><span class="line">    <span class="comment">// pre 表示遍历节点cur的前一个，用于删除</span></span><br><span class="line">    ListNode cur = head, pre = dummy;</span><br><span class="line">    <span class="comment">// pre2 表示插入位置的前一个</span></span><br><span class="line">    ListNode pre2 = dummy;</span><br><span class="line">    <span class="keyword">while</span> (cur != <span class="keyword">null</span>)&#123;</span><br><span class="line">        <span class="keyword">int</span> s = cur.val;</span><br><span class="line">        <span class="keyword">if</span>(cur.val &lt; x)&#123;</span><br><span class="line">            <span class="comment">// 删除原位置元素</span></span><br><span class="line">            pre.next = cur.next;</span><br><span class="line">            pre = pre.next;</span><br><span class="line">            <span class="comment">// 插入到前面位置</span></span><br><span class="line">            cur.next = pre2.next;</span><br><span class="line">            pre2.next = cur;</span><br><span class="line">            pre2 = cur;</span><br><span class="line"></span><br><span class="line">        &#125;</span><br><span class="line">        pre = cur;</span><br><span class="line">        cur = cur.next;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> dummy.next;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>链表的题目，一定要仔细。</p>
-<h2 id="5-反转链表-206"><a href="#5-反转链表-206" class="headerlink" title="5. 反转链表 [206]"></a>5. 反转链表 [206]</h2><p>题目来源：<a href="https://leetcode-cn.com/problems/reverse-linked-list/" target="_blank" rel="noopener">206. 反转链表</a></p>
-<h3 id="5-1-题目描述"><a href="#5-1-题目描述" class="headerlink" title="5.1. 题目描述"></a>5.1. 题目描述</h3><p><img src="/pictures/image-20200826094442518.png" alt="image-20200826094442518"></p>
-<h3 id="5-2-方法一：迭代"><a href="#5-2-方法一：迭代" class="headerlink" title="5.2. 方法一：迭代"></a>5.2. 方法一：迭代</h3><p>迭代方法比较好想，添加一个 dummy 节点更好理解。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> ListNode <span class="title">reverseList</span><span class="params">(ListNode head)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span>(head == <span class="keyword">null</span>)&#123;<span class="keyword">return</span> <span class="keyword">null</span>;&#125;</span><br><span class="line">    ListNode dummy = <span class="keyword">new</span> ListNode(<span class="number">0</span>);</span><br><span class="line">    dummy.next = <span class="keyword">null</span>;</span><br><span class="line"></span><br><span class="line">    ListNode cur = head;</span><br><span class="line">    <span class="keyword">while</span> (cur != <span class="keyword">null</span>)&#123;</span><br><span class="line">        ListNode tmp = cur.next;</span><br><span class="line">        cur.next = dummy.next;</span><br><span class="line">        dummy.next = cur;</span><br><span class="line">        cur = tmp;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> dummy.next;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h3 id="5-3-方法二：递归"><a href="#5-3-方法二：递归" class="headerlink" title="5.3. 方法二：递归"></a>5.3. 方法二：递归</h3><p>思路参考：<a href="https://leetcode.wang/leetcode-206-Reverse-Linked-List.html" target="_blank" rel="noopener">这里</a>。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> ListNode <span class="title">reverseList</span><span class="params">(ListNode head)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 递归出口</span></span><br><span class="line">    <span class="keyword">if</span>(head == <span class="keyword">null</span> || head.next == <span class="keyword">null</span>)&#123;</span><br><span class="line">        <span class="keyword">return</span> head;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 大问题变为小问题：head.next作为剩余部分的头指针</span></span><br><span class="line">    ListNode newHead = reverseList(head.next);</span><br><span class="line">    <span class="comment">// head.next 代表新链表的尾，将他的 next 置为 head，即就是把 head 加到末尾</span></span><br><span class="line">    head.next.next = head;</span><br><span class="line">    head.next = <span class="keyword">null</span>;</span><br><span class="line">    <span class="keyword">return</span> newHead;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h2 id="6-反转链表-II-92"><a href="#6-反转链表-II-92" class="headerlink" title="6. 反转链表 II [92]"></a>6. 反转链表 II [92]</h2><p>题目来源：<a href="https://leetcode-cn.com/problems/reverse-linked-list-ii/" target="_blank" rel="noopener">92. 反转链表 II</a></p>
-<h3 id="6-1-题目描述"><a href="#6-1-题目描述" class="headerlink" title="6.1. 题目描述"></a>6.1. 题目描述</h3><p><img src="/pictures/image-20200826101920949.png" alt="image-20200826101920949"></p>
-<h3 id="6-2-代码"><a href="#6-2-代码" class="headerlink" title="6.2. 代码"></a>6.2. 代码</h3><p>头结点需要单独处理，使用 dummy 节点。这题不难，仔细一点注意节点指向即可。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> ListNode <span class="title">reverseBetween</span><span class="params">(ListNode head, <span class="keyword">int</span> m, <span class="keyword">int</span> n)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> count = <span class="number">1</span>;</span><br><span class="line">    ListNode dummy = <span class="keyword">new</span> ListNode(<span class="number">0</span>);</span><br><span class="line">    dummy.next = <span class="keyword">null</span>;</span><br><span class="line">    ListNode cur = head;</span><br><span class="line">    ListNode pre = dummy;</span><br><span class="line">    <span class="keyword">while</span> (cur != <span class="keyword">null</span>)&#123;</span><br><span class="line">        <span class="keyword">if</span> (m == count)&#123;</span><br><span class="line">            ListNode pre2 = pre;</span><br><span class="line">            pre = cur;</span><br><span class="line">            <span class="keyword">for</span>(; count &lt;= n; count++)&#123;</span><br><span class="line">                ListNode next = cur.next;</span><br><span class="line">                cur.next = pre2.next;</span><br><span class="line">                pre2.next = cur;</span><br><span class="line">                cur = next;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">            ListNode tmp = cur.next;</span><br><span class="line">            cur.next = pre.next;</span><br><span class="line">            pre.next = cur;</span><br><span class="line">            pre = cur;</span><br><span class="line">            cur = tmp;</span><br><span class="line">            count++;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> dummy.next;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h2 id="7-参考引用"><a href="#7-参考引用" class="headerlink" title="7. 参考引用"></a>7. 参考引用</h2><ol>
-<li><a href="https://leetcode.wang/leetCode-83-Remove-Duplicates-from-Sorted-List.html" target="_blank" rel="noopener">https://leetcode.wang/leetCode-83-Remove-Duplicates-from-Sorted-List.html</a></li>
-<li><a href="https://leetcode.wang/leetCode-86-Partition-List.html" target="_blank" rel="noopener">https://leetcode.wang/leetCode-86-Partition-List.html</a></li>
-<li><a href="https://leetcode.wang/leetcode-206-Reverse-Linked-List.html" target="_blank" rel="noopener">https://leetcode.wang/leetcode-206-Reverse-Linked-List.html</a></li>
-</ol>
-]]></content>
-      <categories>
-        <category>Algorithm</category>
-      </categories>
-      <tags>
-        <tag>Java</tag>
-        <tag>Algorithm</tag>
-        <tag>链表</tag>
+        <tag>KMP</tag>
       </tags>
   </entry>
   <entry>
     <title>动态规划总结</title>
-    <url>/2020/08/01/%E5%8A%A8%E6%80%81%E8%A7%84%E5%88%92%E6%80%BB%E7%BB%93/</url>
+    <url>/2020/09/11/%E5%8A%A8%E6%80%81%E8%A7%84%E5%88%92%E6%80%BB%E7%BB%93/</url>
     <content><![CDATA[<p>本文主要介绍了动态规划的概念、解题框架，并以斐波那契数列、零钱兑换为例，进一步说明动态规划如何运用和理解。另外，本文还解决了LeetCode中部分使用动态规划思想的题目，这部分会持续更新。</p>
 <h2 id="1-什么是动态规划？"><a href="#1-什么是动态规划？" class="headerlink" title="1. 什么是动态规划？"></a>1. 什么是动态规划？</h2><p><a href="https://zh.wikipedia.org/wiki/动态规划" target="_blank" rel="noopener">维基定义</a>：（英语：Dynamic programming，简称DP）是一种在数学、管理科学、计算机科学、经济学和生物信息学中使用的，通过把原问题分解为相对简单的子问题的方式求解复杂问题的方法。</p>
 <p>动态规划常常适用于有重叠子问题和最优子结构性质的问题，动态规划方法所耗时间往往远少于朴素解法。</p>
@@ -500,6 +415,11 @@
 <td align="center">120</td>
 <td align="center"><a href="https://leetcode-cn.com/problems/triangle/" target="_blank" rel="noopener">三角形最小路径和</a></td>
 <td align="center">Hard</td>
+</tr>
+<tr>
+<td align="center">123</td>
+<td align="center"><a href="https://leetcode-cn.com/problems/best-time-to-buy-and-sell-stock-iii/" target="_blank" rel="noopener">买卖股票的最佳时机 III</a></td>
+<td align="center">Very Hard</td>
 </tr>
 </tbody></table>
 <h2 id="7-例题：最长上升子序列-300"><a href="#7-例题：最长上升子序列-300" class="headerlink" title="7. 例题：最长上升子序列 [300]"></a>7. 例题：最长上升子序列 [300]</h2><p>题目来源：<a href="https://leetcode-cn.com/problems/longest-increasing-subsequence/" target="_blank" rel="noopener">300. 最长上升子序列</a></p>
@@ -828,7 +748,16 @@
 <p>如果正着更新的话，会把后面要用的值覆盖掉。因此，倒着更新。</p>
 <figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">minimumTotal</span><span class="params">(List&lt;List&lt;Integer&gt;&gt; triangle)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> size = triangle.size();</span><br><span class="line">    <span class="keyword">int</span>[] dp = <span class="keyword">new</span> <span class="keyword">int</span>[size];</span><br><span class="line">    dp[<span class="number">0</span>]=triangle.get(<span class="number">0</span>).get(<span class="number">0</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">1</span>; i &lt; size; i++)&#123;</span><br><span class="line">        <span class="keyword">for</span>(<span class="keyword">int</span> j = i; j &gt;= <span class="number">0</span>; j--)&#123;</span><br><span class="line">            <span class="keyword">if</span>(j == i)&#123;</span><br><span class="line">                dp[j] = dp[j - <span class="number">1</span>] + triangle.get(i).get(j);</span><br><span class="line">            &#125;<span class="keyword">else</span> <span class="keyword">if</span>(j == <span class="number">0</span>)&#123;</span><br><span class="line">                dp[j] = dp[j] + triangle.get(i).get(j);</span><br><span class="line">            &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">                dp[j] = Math.min(dp[j - <span class="number">1</span>], dp[j]) + triangle.get(i).get(j);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">int</span> min = Integer.MAX_VALUE;</span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; size; i++)&#123;</span><br><span class="line">        min = Math.min(min, dp[i]);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> min;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<h2 id="27-参考引用"><a href="#27-参考引用" class="headerlink" title="27. 参考引用"></a>27. 参考引用</h2><ol>
+<h2 id="27-买卖股票的最佳时机-III-123"><a href="#27-买卖股票的最佳时机-III-123" class="headerlink" title="27. 买卖股票的最佳时机 III [123]"></a>27. 买卖股票的最佳时机 III [123]</h2><p>题目来源：<a href="https://leetcode-cn.com/problems/best-time-to-buy-and-sell-stock-iii/" target="_blank" rel="noopener">123. 买卖股票的最佳时机 III</a></p>
+<h3 id="27-1-题目描述"><a href="#27-1-题目描述" class="headerlink" title="27.1. 题目描述"></a>27.1. 题目描述</h3><p><img src="/pictures/image-20200914160900975.png" alt="image-20200914160900975"></p>
+<h3 id="27-2-方法一：DP"><a href="#27-2-方法一：DP" class="headerlink" title="27.2. 方法一：DP"></a>27.2. 方法一：DP</h3><p>参考 <a href="https://leetcode-cn.com/problems/best-time-to-buy-and-sell-stock-iii/solution/mai-mai-gu-piao-zui-jia-shi-ji-iiidong-tai-gui-hua/" target="_blank" rel="noopener">这里</a> 的方法二。</p>
+<p>使用二维数组，第二位存储 5 种状态，想不到…</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">maxProfit</span><span class="params">(<span class="keyword">int</span>[] prices)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (prices.length &lt; <span class="number">2</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">int</span> len = prices.length;</span><br><span class="line">    <span class="comment">// 5 种状态：0 未交易；1 买入一次；2 卖出一次；3 买入2次；卖出2次</span></span><br><span class="line">    <span class="comment">// dp[i][j] = x 表示：用户处于 j 状态下的钱为 x</span></span><br><span class="line">    <span class="keyword">int</span>[][] dp = <span class="keyword">new</span> <span class="keyword">int</span>[len][<span class="number">5</span>];</span><br><span class="line">    <span class="comment">// base case</span></span><br><span class="line">    dp[<span class="number">0</span>][<span class="number">0</span>] = <span class="number">0</span>;</span><br><span class="line">    dp[<span class="number">0</span>][<span class="number">1</span>] = -prices[<span class="number">0</span>];</span><br><span class="line">    dp[<span class="number">0</span>][<span class="number">2</span>] = <span class="number">0</span>;</span><br><span class="line">    dp[<span class="number">0</span>][<span class="number">3</span>] = -prices[<span class="number">0</span>];</span><br><span class="line">    dp[<span class="number">0</span>][<span class="number">4</span>] = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt; len; ++i) &#123;</span><br><span class="line">        dp[i][<span class="number">0</span>] = <span class="number">0</span>;</span><br><span class="line">        dp[i][<span class="number">1</span>] = Math.max(dp[i - <span class="number">1</span>][<span class="number">1</span>], dp[i - <span class="number">1</span>][<span class="number">0</span>] - prices[i]);</span><br><span class="line">        dp[i][<span class="number">2</span>] = Math.max(dp[i - <span class="number">1</span>][<span class="number">2</span>], dp[i - <span class="number">1</span>][<span class="number">1</span>] + prices[i]);</span><br><span class="line">        dp[i][<span class="number">3</span>] = Math.max(dp[i - <span class="number">1</span>][<span class="number">3</span>], dp[i - <span class="number">1</span>][<span class="number">2</span>] - prices[i]);</span><br><span class="line">        dp[i][<span class="number">4</span>] = Math.max(dp[i - <span class="number">1</span>][<span class="number">4</span>], dp[i - <span class="number">1</span>][<span class="number">3</span>] + prices[i]);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> Math.max(dp[len - <span class="number">1</span>][<span class="number">2</span>], dp[len - <span class="number">1</span>][<span class="number">4</span>]);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="27-3-方法二：方法一的优化"><a href="#27-3-方法二：方法一的优化" class="headerlink" title="27.3. 方法二：方法一的优化"></a>27.3. 方法二：方法一的优化</h3><p>上面解法中，每一次 dp 数组的更新只会依赖于上一层 dp 数组，因此没必要使用二维数组，使用一维数组，存储上一层数据即可。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">maxProfit</span><span class="params">(<span class="keyword">int</span>[] prices)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (prices.length &lt; <span class="number">2</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">int</span> len = prices.length;</span><br><span class="line">    <span class="keyword">int</span>[] dp = <span class="keyword">new</span> <span class="keyword">int</span>[<span class="number">5</span>];</span><br><span class="line">    dp[<span class="number">0</span>] = <span class="number">0</span>;</span><br><span class="line">    dp[<span class="number">1</span>] = -prices[<span class="number">0</span>];</span><br><span class="line">    dp[<span class="number">2</span>] = Integer.MIN_VALUE;</span><br><span class="line">    dp[<span class="number">3</span>] = Integer.MIN_VALUE;</span><br><span class="line">    dp[<span class="number">4</span>] = Integer.MIN_VALUE;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt; len; ++i) &#123;</span><br><span class="line">        dp[<span class="number">0</span>] = <span class="number">0</span>;</span><br><span class="line">        dp[<span class="number">1</span>] = Math.max(dp[<span class="number">1</span>], dp[<span class="number">0</span>] - prices[i]);</span><br><span class="line">        dp[<span class="number">2</span>] = Math.max(dp[<span class="number">2</span>], dp[<span class="number">1</span>] + prices[i]);</span><br><span class="line">        dp[<span class="number">3</span>] = Math.max(dp[<span class="number">3</span>], dp[<span class="number">2</span>] - prices[i]);</span><br><span class="line">        dp[<span class="number">4</span>] = Math.max(dp[<span class="number">4</span>], dp[<span class="number">3</span>] + prices[i]);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> Math.max(dp[<span class="number">2</span>], dp[<span class="number">4</span>]);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="28-参考引用"><a href="#28-参考引用" class="headerlink" title="28. 参考引用"></a>28. 参考引用</h2><ol>
 <li><a href="[https://zh.wikipedia.org/wiki/%E5%8A%A8%E6%80%81%E8%A7%84%E5%88%92](https://zh.wikipedia.org/wiki/动态规划)">Wikipedia</a></li>
 <li><a href="https://labuladong.gitbook.io/algo/dong-tai-gui-hua-xi-lie/dong-tai-gui-hua-xiang-jie-jin-jie" target="_blank" rel="noopener">https://labuladong.gitbook.io/algo/dong-tai-gui-hua-xi-lie/dong-tai-gui-hua-xiang-jie-jin-jie</a></li>
 <li><a href="https://mp.weixin.qq.com/s/7QFapCuvi-2nkh6gREcR9g" target="_blank" rel="noopener">https://mp.weixin.qq.com/s/7QFapCuvi-2nkh6gREcR9g</a></li>
@@ -847,6 +776,250 @@
         <tag>Java</tag>
         <tag>Algorithm</tag>
         <tag>DP</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>链表总结</title>
+    <url>/2020/08/17/%E9%93%BE%E8%A1%A8%E6%80%BB%E7%BB%93/</url>
+    <content><![CDATA[<p>本文主要总结了 LeetCode 上链表相关的题目，会持续更新~</p>
+<h2 id="1-链表相关的题目列表"><a href="#1-链表相关的题目列表" class="headerlink" title="1. 链表相关的题目列表"></a>1. 链表相关的题目列表</h2><p>本文的题目列表如下：</p>
+<a id="more"></a>
+
+<table>
+<thead>
+<tr>
+<th align="center">#</th>
+<th align="center">Title</th>
+<th align="center">Remark</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">83</td>
+<td align="center"><a href="https://leetcode-cn.com/problems/remove-duplicates-from-sorted-list/" target="_blank" rel="noopener">删除排序链表中的重复元素</a></td>
+<td align="center"></td>
+</tr>
+<tr>
+<td align="center">82</td>
+<td align="center"><a href="https://leetcode-cn.com/problems/remove-duplicates-from-sorted-list-ii/" target="_blank" rel="noopener">删除排序链表中的重复元素 II</a></td>
+<td align="center">Hard</td>
+</tr>
+<tr>
+<td align="center">86</td>
+<td align="center"><a href="https://leetcode-cn.com/problems/partition-list/" target="_blank" rel="noopener">分隔链表</a></td>
+<td align="center"></td>
+</tr>
+<tr>
+<td align="center">2</td>
+<td align="center"></td>
+<td align="center"></td>
+</tr>
+<tr>
+<td align="center">25</td>
+<td align="center"></td>
+<td align="center"></td>
+</tr>
+<tr>
+<td align="center">61</td>
+<td align="center"></td>
+<td align="center"></td>
+</tr>
+<tr>
+<td align="center">206</td>
+<td align="center"><a href="https://leetcode-cn.com/problems/reverse-linked-list/" target="_blank" rel="noopener">反转链表</a></td>
+<td align="center"></td>
+</tr>
+<tr>
+<td align="center">92</td>
+<td align="center"><a href="https://leetcode-cn.com/problems/reverse-linked-list-ii/" target="_blank" rel="noopener">反转链表 II</a></td>
+<td align="center"></td>
+</tr>
+</tbody></table>
+<h2 id="2-删除排序链表中的重复元素-83"><a href="#2-删除排序链表中的重复元素-83" class="headerlink" title="2. 删除排序链表中的重复元素 [83]"></a>2. 删除排序链表中的重复元素 [83]</h2><p>题目来源：<a href="https://leetcode-cn.com/problems/remove-duplicates-from-sorted-list/" target="_blank" rel="noopener">83. 删除排序链表中的重复元素</a></p>
+<h3 id="2-1-题目描述"><a href="#2-1-题目描述" class="headerlink" title="2.1. 题目描述"></a>2.1. 题目描述</h3><p><img src="/pictures/image-20200818094630464.png" alt="image-20200818094630464"></p>
+<h3 id="2-2-方法一：迭代"><a href="#2-2-方法一：迭代" class="headerlink" title="2.2. 方法一：迭代"></a>2.2. 方法一：迭代</h3><p>保存前一个节点 pre, 遇到与 pre 相同的节点就往后移，找到不同的节点，接到 pre 的后面。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> ListNode <span class="title">deleteDuplicates</span><span class="params">(ListNode head)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span>(head == <span class="keyword">null</span> || head.next == <span class="keyword">null</span>)&#123;<span class="keyword">return</span> head;&#125;</span><br><span class="line"></span><br><span class="line">    ListNode pre = head, curr = head.next;</span><br><span class="line">    <span class="keyword">while</span> (curr != <span class="keyword">null</span>)&#123;</span><br><span class="line">        <span class="keyword">while</span> (curr != <span class="keyword">null</span> &amp;&amp; curr.val == pre.val)&#123;</span><br><span class="line">            curr = curr.next;</span><br><span class="line">        &#125;</span><br><span class="line">        pre.next = curr;</span><br><span class="line">        pre = curr;</span><br><span class="line">        <span class="keyword">if</span>(curr != <span class="keyword">null</span>)&#123;</span><br><span class="line">            curr = curr.next;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> head;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-3-方法二：迭代（去掉-pre）"><a href="#2-3-方法二：迭代（去掉-pre）" class="headerlink" title="2.3. 方法二：迭代（去掉 pre）"></a>2.3. 方法二：迭代（去掉 pre）</h3><p>参考 <a href="https://leetcode.wang/leetCode-83-Remove-Duplicates-from-Sorted-List.html" target="_blank" rel="noopener">这里</a> 解法二。这道题其实不用 pre 节点也可以完成，不用找到所有重复的数字进行删除，即遇到一个重复数字，删除一个。这样代码看起来更加简洁了：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> ListNode <span class="title">deleteDuplicates</span><span class="params">(ListNode head)</span> </span>&#123;</span><br><span class="line">    ListNode cur = head;</span><br><span class="line">    <span class="keyword">while</span> (cur != <span class="keyword">null</span> &amp;&amp; cur.next != <span class="keyword">null</span>)&#123;</span><br><span class="line">        <span class="keyword">if</span>(cur.val == cur.next.val)&#123;</span><br><span class="line">            cur.next = cur.next.next;</span><br><span class="line">        &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">            cur = cur.next;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> head;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="3-删除排序链表中的重复元素-II-82"><a href="#3-删除排序链表中的重复元素-II-82" class="headerlink" title="3. 删除排序链表中的重复元素 II [82]"></a>3. 删除排序链表中的重复元素 II [82]</h2><p>题目来源：<a href="https://leetcode-cn.com/problems/remove-duplicates-from-sorted-list-ii/" target="_blank" rel="noopener">82. 删除排序链表中的重复元素 II</a></p>
+<h3 id="3-1-题目描述"><a href="#3-1-题目描述" class="headerlink" title="3.1. 题目描述"></a>3.1. 题目描述</h3><p><img src="/pictures/image-20200818100806984.png" alt="image-20200818100806984"></p>
+<p>注意：和上一题相比，本题要求只要是重复的元素需要全部删除，一个不留。</p>
+<h3 id="3-2-迭代"><a href="#3-2-迭代" class="headerlink" title="3.2. 迭代"></a>3.2. 迭代</h3><p>这道题自己写了很久…还是没写出来..</p>
+<p>参考 <a href="https://leetcode.wang/leetCode-82-Remove-Duplicates-from-Sorted-ListII.html" target="_blank" rel="noopener">这里</a> 的解法一。对于链表的操作，如果头结点可能删除，可以使用 dummy 节点，指向 head，最终返回 dummy.next 节点即可，这样可以简化边界问题，不用单独处理。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> ListNode <span class="title">deleteDuplicates</span><span class="params">(ListNode head)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 定义dummy节点</span></span><br><span class="line">    ListNode pre = <span class="keyword">new</span> ListNode(<span class="number">0</span>);</span><br><span class="line">    ListNode dummy = pre;</span><br><span class="line">    pre.next = head;</span><br><span class="line"></span><br><span class="line">    ListNode curr = head;</span><br><span class="line">    <span class="keyword">while</span> (curr != <span class="keyword">null</span> &amp;&amp; curr.next != <span class="keyword">null</span>)&#123;</span><br><span class="line">        <span class="keyword">boolean</span> equal = <span class="keyword">false</span>;</span><br><span class="line">        <span class="comment">// cur 和 cur.next 一直相等，一直后移</span></span><br><span class="line">        <span class="keyword">while</span> (curr.next != <span class="keyword">null</span> &amp;&amp; curr.val == curr.next.val)&#123;</span><br><span class="line">            curr = curr.next;</span><br><span class="line">            equal = <span class="keyword">true</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 如果相等</span></span><br><span class="line">        <span class="comment">// pre.next 直接指向 cur.next 删除所有重复数字</span></span><br><span class="line">        <span class="keyword">if</span>(equal)&#123;</span><br><span class="line">            pre.next = curr.next;</span><br><span class="line"></span><br><span class="line">            <span class="comment">// 如果不相等</span></span><br><span class="line">            <span class="comment">// pre 移到 cur 的地方</span></span><br><span class="line">        &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">            pre = curr;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// cur 后移</span></span><br><span class="line">        curr = curr.next;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> dummy.next;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="4-分隔链表-86"><a href="#4-分隔链表-86" class="headerlink" title="4. 分隔链表 [86]"></a>4. 分隔链表 [86]</h2><p>题目来源：<a href="https://leetcode-cn.com/problems/partition-list/" target="_blank" rel="noopener">86. 分隔链表</a></p>
+<h3 id="4-1-题目描述"><a href="#4-1-题目描述" class="headerlink" title="4.1. 题目描述"></a>4.1. 题目描述</h3><p><img src="/pictures/image-20200818112245505.png" alt="image-20200818112245505"></p>
+<h3 id="4-2-解法一：分成两个链表"><a href="#4-2-解法一：分成两个链表" class="headerlink" title="4.2. 解法一：分成两个链表"></a>4.2. 解法一：分成两个链表</h3><p>注意链表出现环的情况，参考 <a href="https://leetcode.wang/leetCode-86-Partition-List.html" target="_blank" rel="noopener">这里</a> 的解法二。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> ListNode <span class="title">partition</span><span class="params">(ListNode head, <span class="keyword">int</span> x)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 小于x的链表</span></span><br><span class="line">    ListNode lowDummy = <span class="keyword">new</span> ListNode(<span class="number">0</span>);</span><br><span class="line">    ListNode lowCur = lowDummy;</span><br><span class="line">    <span class="comment">// 大于等于x的链表</span></span><br><span class="line">    ListNode highDummy = <span class="keyword">new</span> ListNode(<span class="number">0</span>);</span><br><span class="line">    ListNode highCur = highDummy;</span><br><span class="line"></span><br><span class="line">    ListNode cur = head;</span><br><span class="line">    <span class="keyword">while</span> (cur != <span class="keyword">null</span>)&#123;</span><br><span class="line">        <span class="keyword">if</span>(cur.val &lt; x)&#123;</span><br><span class="line">            lowCur.next = cur;</span><br><span class="line">            lowCur = lowCur.next;</span><br><span class="line">        &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">            highCur.next = cur;</span><br><span class="line">            highCur = highCur.next;</span><br><span class="line">        &#125;</span><br><span class="line">        cur = cur.next;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 一定要注意添加这一步，不然链表会出现环</span></span><br><span class="line">    highCur.next = <span class="keyword">null</span>;</span><br><span class="line">    <span class="comment">// 链表拼接</span></span><br><span class="line">    lowCur.next = highDummy.next;</span><br><span class="line">    <span class="keyword">return</span> lowDummy.next;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="4-3-解法二：头插法"><a href="#4-3-解法二：头插法" class="headerlink" title="4.3. 解法二：头插法"></a>4.3. 解法二：头插法</h3><p>遍历整个链表，找到小于 x 的节点，插入到前面。前面和后面都需要一个 pre 节点保存应该插入和删除的位置。（自己想的..）</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> ListNode <span class="title">partition</span><span class="params">(ListNode head, <span class="keyword">int</span> x)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span>(head == <span class="keyword">null</span>)&#123;<span class="keyword">return</span> head;&#125;</span><br><span class="line">    ListNode dummy = <span class="keyword">new</span> ListNode(<span class="number">0</span>);</span><br><span class="line">    dummy.next = head;</span><br><span class="line">    <span class="comment">// pre 表示遍历节点cur的前一个，用于删除</span></span><br><span class="line">    ListNode cur = head, pre = dummy;</span><br><span class="line">    <span class="comment">// pre2 表示插入位置的前一个</span></span><br><span class="line">    ListNode pre2 = dummy;</span><br><span class="line">    <span class="keyword">while</span> (cur != <span class="keyword">null</span>)&#123;</span><br><span class="line">        <span class="keyword">int</span> s = cur.val;</span><br><span class="line">        <span class="keyword">if</span>(cur.val &lt; x)&#123;</span><br><span class="line">            <span class="comment">// 删除原位置元素</span></span><br><span class="line">            pre.next = cur.next;</span><br><span class="line">            pre = pre.next;</span><br><span class="line">            <span class="comment">// 插入到前面位置</span></span><br><span class="line">            cur.next = pre2.next;</span><br><span class="line">            pre2.next = cur;</span><br><span class="line">            pre2 = cur;</span><br><span class="line"></span><br><span class="line">        &#125;</span><br><span class="line">        pre = cur;</span><br><span class="line">        cur = cur.next;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> dummy.next;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>链表的题目，一定要仔细。</p>
+<h2 id="5-反转链表-206"><a href="#5-反转链表-206" class="headerlink" title="5. 反转链表 [206]"></a>5. 反转链表 [206]</h2><p>题目来源：<a href="https://leetcode-cn.com/problems/reverse-linked-list/" target="_blank" rel="noopener">206. 反转链表</a></p>
+<h3 id="5-1-题目描述"><a href="#5-1-题目描述" class="headerlink" title="5.1. 题目描述"></a>5.1. 题目描述</h3><p><img src="/pictures/image-20200826094442518.png" alt="image-20200826094442518"></p>
+<h3 id="5-2-方法一：迭代"><a href="#5-2-方法一：迭代" class="headerlink" title="5.2. 方法一：迭代"></a>5.2. 方法一：迭代</h3><p>迭代方法比较好想，添加一个 dummy 节点更好理解。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> ListNode <span class="title">reverseList</span><span class="params">(ListNode head)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span>(head == <span class="keyword">null</span>)&#123;<span class="keyword">return</span> <span class="keyword">null</span>;&#125;</span><br><span class="line">    ListNode dummy = <span class="keyword">new</span> ListNode(<span class="number">0</span>);</span><br><span class="line">    dummy.next = <span class="keyword">null</span>;</span><br><span class="line"></span><br><span class="line">    ListNode cur = head;</span><br><span class="line">    <span class="keyword">while</span> (cur != <span class="keyword">null</span>)&#123;</span><br><span class="line">        ListNode tmp = cur.next;</span><br><span class="line">        cur.next = dummy.next;</span><br><span class="line">        dummy.next = cur;</span><br><span class="line">        cur = tmp;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> dummy.next;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="5-3-方法二：递归"><a href="#5-3-方法二：递归" class="headerlink" title="5.3. 方法二：递归"></a>5.3. 方法二：递归</h3><p>思路参考：<a href="https://leetcode.wang/leetcode-206-Reverse-Linked-List.html" target="_blank" rel="noopener">这里</a>。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> ListNode <span class="title">reverseList</span><span class="params">(ListNode head)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 递归出口</span></span><br><span class="line">    <span class="keyword">if</span>(head == <span class="keyword">null</span> || head.next == <span class="keyword">null</span>)&#123;</span><br><span class="line">        <span class="keyword">return</span> head;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 大问题变为小问题：head.next作为剩余部分的头指针</span></span><br><span class="line">    ListNode newHead = reverseList(head.next);</span><br><span class="line">    <span class="comment">// head.next 代表新链表的尾，将他的 next 置为 head，即就是把 head 加到末尾</span></span><br><span class="line">    head.next.next = head;</span><br><span class="line">    head.next = <span class="keyword">null</span>;</span><br><span class="line">    <span class="keyword">return</span> newHead;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="6-反转链表-II-92"><a href="#6-反转链表-II-92" class="headerlink" title="6. 反转链表 II [92]"></a>6. 反转链表 II [92]</h2><p>题目来源：<a href="https://leetcode-cn.com/problems/reverse-linked-list-ii/" target="_blank" rel="noopener">92. 反转链表 II</a></p>
+<h3 id="6-1-题目描述"><a href="#6-1-题目描述" class="headerlink" title="6.1. 题目描述"></a>6.1. 题目描述</h3><p><img src="/pictures/image-20200826101920949.png" alt="image-20200826101920949"></p>
+<h3 id="6-2-代码"><a href="#6-2-代码" class="headerlink" title="6.2. 代码"></a>6.2. 代码</h3><p>头结点需要单独处理，使用 dummy 节点。这题不难，仔细一点注意节点指向即可。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> ListNode <span class="title">reverseBetween</span><span class="params">(ListNode head, <span class="keyword">int</span> m, <span class="keyword">int</span> n)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> count = <span class="number">1</span>;</span><br><span class="line">    ListNode dummy = <span class="keyword">new</span> ListNode(<span class="number">0</span>);</span><br><span class="line">    dummy.next = <span class="keyword">null</span>;</span><br><span class="line">    ListNode cur = head;</span><br><span class="line">    ListNode pre = dummy;</span><br><span class="line">    <span class="keyword">while</span> (cur != <span class="keyword">null</span>)&#123;</span><br><span class="line">        <span class="keyword">if</span> (m == count)&#123;</span><br><span class="line">            ListNode pre2 = pre;</span><br><span class="line">            pre = cur;</span><br><span class="line">            <span class="keyword">for</span>(; count &lt;= n; count++)&#123;</span><br><span class="line">                ListNode next = cur.next;</span><br><span class="line">                cur.next = pre2.next;</span><br><span class="line">                pre2.next = cur;</span><br><span class="line">                cur = next;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">            ListNode tmp = cur.next;</span><br><span class="line">            cur.next = pre.next;</span><br><span class="line">            pre.next = cur;</span><br><span class="line">            pre = cur;</span><br><span class="line">            cur = tmp;</span><br><span class="line">            count++;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> dummy.next;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="7-参考引用"><a href="#7-参考引用" class="headerlink" title="7. 参考引用"></a>7. 参考引用</h2><ol>
+<li><a href="https://leetcode.wang/leetCode-83-Remove-Duplicates-from-Sorted-List.html" target="_blank" rel="noopener">https://leetcode.wang/leetCode-83-Remove-Duplicates-from-Sorted-List.html</a></li>
+<li><a href="https://leetcode.wang/leetCode-86-Partition-List.html" target="_blank" rel="noopener">https://leetcode.wang/leetCode-86-Partition-List.html</a></li>
+<li><a href="https://leetcode.wang/leetcode-206-Reverse-Linked-List.html" target="_blank" rel="noopener">https://leetcode.wang/leetcode-206-Reverse-Linked-List.html</a></li>
+</ol>
+]]></content>
+      <categories>
+        <category>Algorithm</category>
+      </categories>
+      <tags>
+        <tag>Java</tag>
+        <tag>Algorithm</tag>
+        <tag>链表</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>贪心算法总结</title>
+    <url>/2020/08/01/%E8%B4%AA%E5%BF%83%E7%AE%97%E6%B3%95%E6%80%BB%E7%BB%93/</url>
+    <content><![CDATA[<p>本文主要介绍了贪心算法以及 LeetCode 的相关题目。</p>
+<h2 id="1-什么是贪心算法？"><a href="#1-什么是贪心算法？" class="headerlink" title="1. 什么是贪心算法？"></a>1. 什么是贪心算法？</h2><p><a href="https://zh.wikipedia.org/wiki/%E8%B4%AA%E5%BF%83%E7%AE%97%E6%B3%95" target="_blank" rel="noopener">维基定义</a>：（英语：greedy algorithm），又称<strong>贪婪算法</strong>，是一种在每一步选择中都采取在当前状态下最好或最优（即最有利）的选择，从而希望导致结果是最好或最优的算法。比如在 <a href="https://zh.wikipedia.org/wiki/旅行推销员问题" target="_blank" rel="noopener">旅行推销员问题</a> 中，如果旅行员每次都选择最近的城市，那这就是一种贪心算法。</p>
+<p>贪心算法在有最优子结构的问题中尤为有效。最优子结构的意思是局部最优解能决定全局最优解。简单地说，问题能够分解成子问题来解决，子问题的最优解能递推到最终问题的最优解。</p>
+<p><strong>贪心算法与动态规划的不同在于它对每个子问题的解决方案都做出选择，不能回退。动态规划则会保存以前的运算结果，并根据以前的结果对当前进行选择，有回退功能。</strong></p>
+<a id="more"></a>
+
+<p>参考 <a href="https://labuladong.gitbook.io/algo/dong-tai-gui-hua-xi-lie/tan-xin-suan-fa-zhi-qu-jian-tiao-du-wen-ti" target="_blank" rel="noopener">这里</a> 给出对于贪心算法的理解：</p>
+<p>什么是贪心算法呢？贪心算法可以认为是动态规划算法的一个特例，相比动态规划，使用贪心算法需要满足更多的条件（贪心选择性质），但是效率比动态规划要高。</p>
+<p>比如说一个算法问题使用暴力解法需要指数级时间，如果能使用动态规划消除重叠子问题，就可以降到多项式级别的时间，如果满足贪心选择性质，那么可以进一步降低时间复杂度，达到线性级别的。</p>
+<p>什么是贪心选择性质呢，简单说就是：每一步都做出一个局部最优的选择，最终的结果就是全局最优。注意哦，这是一种特殊性质，其实只有一部分问题拥有这个性质。</p>
+<p>比如你面前放着 100 张人民币，你只能拿十张，怎么才能拿最多的面额？显然每次选择剩下钞票中面值最大的一张，最后你的选择一定是最优的。</p>
+<p>然而，大部分问题明显不具有贪心选择性质。比如打斗地主，对手出对儿三，按照贪心策略，你应该出尽可能小的牌刚好压制住对方，但现实情况我们甚至可能会出王炸。这种情况就不能用贪心算法，而得使用动态规划解决。</p>
+<h2 id="2-区间调度问题"><a href="#2-区间调度问题" class="headerlink" title="2. 区间调度问题"></a>2. 区间调度问题</h2><p>参考 <a href="https://labuladong.gitbook.io/algo/dong-tai-gui-hua-xi-lie/tan-xin-suan-fa-zhi-qu-jian-tiao-du-wen-ti" target="_blank" rel="noopener">这里</a> .</p>
+<h3 id="2-1-问题描述"><a href="#2-1-问题描述" class="headerlink" title="2.1. 问题描述"></a>2.1. 问题描述</h3><p>首先解决一个很经典的贪心算法问题：区间调度问题（Interval Scheduling）。给出形如 <code>[start, end]</code> 的闭区间，设计一个算法，求出这些区间 <strong>最多有几个互不相交的区间</strong> 。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">intervalSchedule</span><span class="params">(<span class="keyword">int</span>[][] intvs)</span> </span>&#123;&#125;</span><br></pre></td></tr></table></figure>
+
+<p>举个例子，<code>intvs = [[1,3], [2,4], [3,6]]</code>，这些区间最多有 2 个区间互不相交，即 <code>[[1,3], [3,6]]</code>，你的算法应该返回 2。注意边界相同并不算相交。</p>
+<p>这个问题在生活中的应用广泛，比如你今天有好几个活动，每个活动都可以用区间 <code>[start, end]</code> 表示开始和结束的时间，请问你今天<strong>最多能参加几个活动呢？</strong>显然你一个人不能同时参加两个活动，所以说这个问题就是求这些时间区间的最大不相交子集。</p>
+<h3 id="2-2-题目分析"><a href="#2-2-题目分析" class="headerlink" title="2.2. 题目分析"></a>2.2. 题目分析</h3><p>这个问题有许多看起来不错的贪心思路，却都不能得到正确答案。比如说：</p>
+<p>也许我们可以每次选择可选区间中开始最早的那个？但是可能存在某些区间开始很早，但是很长，使得我们错误地错过了一些短的区间。或者我们每次选择可选区间中最短的那个？或者选择出现冲突最少的那个区间？这些方案都能很容易举出反例，不是正确的方案。</p>
+<p>正确的思路其实很简单，可以分为以下三步：</p>
+<ol>
+<li>从区间集合 intvs 中选择一个区间 x，这个 x 是在当前所有区间中<strong>结束最早的</strong>（end 最小）。</li>
+<li>把所有与 x 区间相交的区间从区间集合 intvs 中删除。</li>
+<li>重复步骤 1 和 2，直到 intvs 为空为止。之前选出的那些 x 就是最大不相交子集。</li>
+</ol>
+<p>把这个思路实现成算法的话，可以按每个区间的 <code>end</code> 数值升序排序，因为这样处理之后实现步骤 1 和步骤 2 都方便很多。如下图所示：</p>
+<img src="/pictures/image-20200912154659563.png" alt="image-20200912154659563" style="zoom:67%;" />
+
+<p>前三个区间属于相交区间，count 不用 +1，第四个区间就是一个新的不相交区间，访问到第四个区间时，count 需要+1，并且更新 end。</p>
+<p>这种思路的贪心算法体现在：在上图中，第一个区间和第二个区间属于相交区间，肯定是二选一的，如何选择呢？当然是选择第一个。因为第一个给后面区间的选择留有更大的空间，这就属于当前情况下的最优选择，之后的选择就在这个选择的基础上，进行选择。</p>
+<h3 id="2-3-代码"><a href="#2-3-代码" class="headerlink" title="2.3. 代码"></a>2.3. 代码</h3><p>参考博客的代码，做了一些修改，这样可以和后面两个题统一。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">intervalSchedule</span><span class="params">(<span class="keyword">int</span>[][] intvs)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span>(intvs.length == <span class="number">0</span>)&#123;<span class="keyword">return</span> <span class="number">0</span>;&#125;</span><br><span class="line">    <span class="comment">// 按 end 排序</span></span><br><span class="line">    Arrays.sort(intvs, <span class="keyword">new</span> Comparator&lt;<span class="keyword">int</span>[]&gt;() &#123;</span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">compare</span><span class="params">(<span class="keyword">int</span>[] a, <span class="keyword">int</span>[] b)</span> </span>&#123;</span><br><span class="line">            <span class="keyword">return</span> a[<span class="number">1</span>] - b[<span class="number">1</span>];</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 初始时，至少有一个区间不相交</span></span><br><span class="line">    <span class="keyword">int</span> count = <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">int</span> end = intvs[<span class="number">0</span>][<span class="number">1</span>];</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">1</span>; i &lt; intvs.length; i++)&#123;</span><br><span class="line">        <span class="keyword">if</span>(intvs[i][<span class="number">0</span>] &gt;= end)&#123;</span><br><span class="line">            count++;</span><br><span class="line">            end = intvs[i][<span class="number">1</span>];</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> count;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="3-无重叠区间-435"><a href="#3-无重叠区间-435" class="headerlink" title="3. 无重叠区间 [435]"></a>3. 无重叠区间 [435]</h2><p>题目来源：<a href="https://leetcode-cn.com/problems/non-overlapping-intervals/" target="_blank" rel="noopener">435. 无重叠区间</a></p>
+<h3 id="3-1-题目描述"><a href="#3-1-题目描述" class="headerlink" title="3.1. 题目描述"></a>3.1. 题目描述</h3><p><img src="/pictures/image-20200912101636226.png" alt="image-20200912101636226"></p>
+<h3 id="3-2-方法一：区间调度算法（推荐）"><a href="#3-2-方法一：区间调度算法（推荐）" class="headerlink" title="3.2. 方法一：区间调度算法（推荐）"></a>3.2. 方法一：区间调度算法（推荐）</h3><p>使用本文第 2 小节的区间调度问题的思路即可。上文中，区间调度问题求的是最多不相交的区间个数，这里求移除几个区间后，区间互不重叠，即就是返回 <code>总的区间数 - 不重叠的区间数</code> 。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">eraseOverlapIntervals</span><span class="params">(<span class="keyword">int</span>[][] intervals)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span>(intervals.length == <span class="number">0</span>)&#123;<span class="keyword">return</span> <span class="number">0</span>;&#125;</span><br><span class="line">    Arrays.sort(intervals, <span class="keyword">new</span> Comparator&lt;<span class="keyword">int</span>[]&gt;() &#123;</span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">compare</span><span class="params">(<span class="keyword">int</span>[] a, <span class="keyword">int</span>[] b)</span> </span>&#123;</span><br><span class="line">            <span class="keyword">return</span> a[<span class="number">1</span>] - b[<span class="number">1</span>];</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;);</span><br><span class="line">    <span class="comment">// 互补重叠的区间数量（能留下的区间数量），初值为 1</span></span><br><span class="line">    <span class="keyword">int</span> count = <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">int</span> end = intervals[<span class="number">0</span>][<span class="number">1</span>];</span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">1</span>; i &lt; intervals.length; i++)&#123;</span><br><span class="line">        <span class="keyword">if</span>(intervals[i][<span class="number">0</span>] &gt;= end)&#123;</span><br><span class="line">            end = intervals[i][<span class="number">1</span>];</span><br><span class="line">            count++;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> intervals.length - count;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-2-方法二：从起点的贪心算法"><a href="#3-2-方法二：从起点的贪心算法" class="headerlink" title="3.2. 方法二：从起点的贪心算法"></a>3.2. 方法二：从起点的贪心算法</h3><p>参考 <a href="https://leetcode-cn.com/problems/non-overlapping-intervals/solution/wu-zhong-die-qu-jian-by-leetcode/" target="_blank" rel="noopener">这里</a> .</p>
+<p>方法一是从终点的贪心算法。这里按照起点对区间进行排序。当按照起点先后顺序考虑区间的时候。我们利用一个 prev 指针追踪刚刚添加到最终列表中的区间。遍历的时候，可能遇到图中的三种情况：</p>
+<p><img src="/pictures/image-20200912104507992.png" alt="image-20200912104507992"></p>
+<ul>
+<li>情况一：当前考虑的两个区间不重叠。在这种情况下，不移除任何区间，将 prev<em>p<strong>r</strong>e**v</em> 赋值为后面的区间，移除区间数量不变。</li>
+<li>情况二：两个区间重叠，后一个区间的终点在前一个终点之前，即前一个区间包含后一个区间。显然，前一个区间的长度更小，会给后面留下更多空间，因此，prev 更新为当前区间，移除区间数量 +1.</li>
+<li>情况三：两个区间重叠，后一个区间的终点在前一个终点之后，这种情况下，我们用贪心策略处理，直接移除后一个区间。（官方解释没看懂…）。我的理解是：这里如果移除前一个区间，会留出 A 的额外空间，但这部分空间是用不到的，不是当前的最优解；但如果移除后一个空间，会留出 B 的额外空间，给后面的区间留下了更多的空间。</li>
+</ul>
+<p>最终代码如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">eraseOverlapIntervals</span><span class="params">(<span class="keyword">int</span>[][] intervals)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span>(intervals.length == <span class="number">0</span>)&#123;<span class="keyword">return</span> <span class="number">0</span>;&#125;</span><br><span class="line">    <span class="comment">// 按照 start 排序</span></span><br><span class="line">    Arrays.sort(intervals, <span class="keyword">new</span> Comparator&lt;<span class="keyword">int</span>[]&gt;() &#123;</span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">compare</span><span class="params">(<span class="keyword">int</span>[] a, <span class="keyword">int</span>[] b)</span> </span>&#123;</span><br><span class="line">            <span class="keyword">return</span> a[<span class="number">0</span>] - b[<span class="number">0</span>];</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;);</span><br><span class="line">    <span class="comment">// prev 指针追踪刚刚添加到最终列表中的区间</span></span><br><span class="line">    <span class="keyword">int</span> prev = <span class="number">0</span>;</span><br><span class="line">    <span class="comment">// 需要移除的数量</span></span><br><span class="line">    <span class="keyword">int</span> count = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">1</span>; i &lt; intervals.length; i++)&#123;</span><br><span class="line">        <span class="keyword">if</span>(intervals[prev][<span class="number">1</span>] &gt; intervals[i][<span class="number">0</span>])&#123;</span><br><span class="line">            <span class="comment">// case 2</span></span><br><span class="line">            <span class="keyword">if</span>(intervals[prev][<span class="number">1</span>] &gt; intervals[i][<span class="number">1</span>])&#123;</span><br><span class="line">                prev = i;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="comment">// case 3</span></span><br><span class="line">            count++;</span><br><span class="line">        &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">            <span class="comment">// case 1</span></span><br><span class="line">            prev = i;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> count;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="4-用最少数量的箭引爆气球-452"><a href="#4-用最少数量的箭引爆气球-452" class="headerlink" title="4. 用最少数量的箭引爆气球 [452]"></a>4. 用最少数量的箭引爆气球 [452]</h2><p>题目来源：<a href="https://leetcode-cn.com/problems/minimum-number-of-arrows-to-burst-balloons/" target="_blank" rel="noopener">452. 用最少数量的箭引爆气球</a></p>
+<h3 id="4-1-题目描述"><a href="#4-1-题目描述" class="headerlink" title="4.1. 题目描述"></a>4.1. 题目描述</h3><p><img src="/pictures/image-20200912114154510.png" alt="image-20200912114154510"></p>
+<h3 id="4-2-方法一：区间调度算法"><a href="#4-2-方法一：区间调度算法" class="headerlink" title="4.2. 方法一：区间调度算法"></a>4.2. 方法一：区间调度算法</h3><p>参考 [这里]。</p>
+<p>仔细思考后，这个问题和区间调度算法一模一样。如果最多有 n 个不重叠的区间，那么就至少需要 n 个箭头穿透所有区间，如下图所示：</p>
+<img src="/pictures/image-20200912160847665.png" alt="image-20200912160847665" style="zoom: 67%;" />
+
+<p>只是有一点不一样，在 <code>intervalSchedule</code> 算法中，如果两个区间的边界触碰，不算重叠；而按照这道题目的描述，箭头如果碰到气球的边界气球也会爆炸，所以说相当于区间的边界触碰也算重叠：</p>
+<img src="/pictures/image-20200912161028162.png" alt="image-20200912161028162" style="zoom:67%;" />
+
+<p>所以只需要将区间调度算法稍作修改，就可以得到题目代码：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">findMinArrowShots</span><span class="params">(<span class="keyword">int</span>[][] points)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span>(points.length == <span class="number">0</span>)&#123;<span class="keyword">return</span> <span class="number">0</span>;&#125;</span><br><span class="line">    <span class="comment">// 按照 end 排序</span></span><br><span class="line">    Arrays.sort(points, <span class="keyword">new</span> Comparator&lt;<span class="keyword">int</span>[]&gt;() &#123;</span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">compare</span><span class="params">(<span class="keyword">int</span>[] a, <span class="keyword">int</span>[] b)</span> </span>&#123;</span><br><span class="line">            <span class="keyword">return</span> a[<span class="number">1</span>] - b[<span class="number">1</span>];</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;);</span><br><span class="line">    <span class="comment">// 互不重叠的区间数量（射箭数量，选中第一个区间时，肯定会射一箭）</span></span><br><span class="line">    <span class="keyword">int</span> count = <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">int</span> end = points[<span class="number">0</span>][<span class="number">1</span>];</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">1</span>; i &lt; points.length; i++)&#123;</span><br><span class="line">        <span class="comment">// 注意：这里把首尾相接的视为相交，去掉等号</span></span><br><span class="line">        <span class="keyword">if</span>(points[i][<span class="number">0</span>] &gt; end)&#123;</span><br><span class="line">            end = points[i][<span class="number">1</span>];</span><br><span class="line">            count++;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> count;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="5-使用贪心算法的题目列表"><a href="#5-使用贪心算法的题目列表" class="headerlink" title="5. 使用贪心算法的题目列表"></a>5. 使用贪心算法的题目列表</h2><p>本文中使用贪心算法解决的 LeetCode 题目列表如下，持续更新中~</p>
+<table>
+<thead>
+<tr>
+<th align="center">#</th>
+<th align="center">Title</th>
+<th align="center">Remark</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">435</td>
+<td align="center"><a href="https://leetcode-cn.com/problems/non-overlapping-intervals/" target="_blank" rel="noopener">无重叠区间</a></td>
+<td align="center">Hard</td>
+</tr>
+<tr>
+<td align="center">452</td>
+<td align="center"><a href="https://leetcode-cn.com/problems/minimum-number-of-arrows-to-burst-balloons/" target="_blank" rel="noopener">用最少数量的箭引爆气球</a></td>
+<td align="center">Hard</td>
+</tr>
+<tr>
+<td align="center">122</td>
+<td align="center"><a href="https://leetcode-cn.com/problems/best-time-to-buy-and-sell-stock-ii/" target="_blank" rel="noopener">买卖股票的最佳时机 II</a></td>
+<td align="center">Hard</td>
+</tr>
+</tbody></table>
+<h2 id="6-买卖股票的最佳时机-II-122"><a href="#6-买卖股票的最佳时机-II-122" class="headerlink" title="6. 买卖股票的最佳时机 II [122]"></a>6. 买卖股票的最佳时机 II [122]</h2><p>题目来源：<a href="https://leetcode-cn.com/problems/best-time-to-buy-and-sell-stock-ii/" target="_blank" rel="noopener">122. 买卖股票的最佳时机 II</a></p>
+<h3 id="6-1-题目描述"><a href="#6-1-题目描述" class="headerlink" title="6.1. 题目描述"></a>6.1. 题目描述</h3><p><img src="/pictures/image-20200911103413418.png" alt="image-20200911103413418"></p>
+<h3 id="6-2-贪心算法"><a href="#6-2-贪心算法" class="headerlink" title="6.2. 贪心算法"></a>6.2. 贪心算法</h3><p>参考 <a href="https://leetcode-cn.com/problems/best-time-to-buy-and-sell-stock-ii/solution/tan-xin-suan-fa-by-liweiwei1419-2/" target="_blank" rel="noopener">这里</a> 的方法二。</p>
+<p>这道题使用贪心算法的流程是这样的：从第 i 天（这里 i &gt;= 1）开始，与第 i - 1 的股价进行比较，如果股价有上升（严格上升），就将升高的股价（ prices[i] - prices[i- 1] ）记入总利润，按照这种算法，得到的结果就是符合题意的最大利润。下面对这个算法进行几点说明：</p>
+<ol>
+<li><p>该算法仅可以用于计算，但计算的过程并不是真正交易的过程，但可以用贪心算法计算题目要求的最大利润。下面说明这个等价性：以 [1, 2, 3, 4] 为例，这 4 天的股价依次上升，按照贪心算法，得到的最大利润是：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">res =  (prices[<span class="number">3</span>] - prices[<span class="number">2</span>]) + (prices[<span class="number">2</span>] - prices[<span class="number">1</span>]) + (prices[<span class="number">1</span>] - prices[<span class="number">0</span>])</span><br><span class="line">    =  prices[<span class="number">3</span>] - prices[<span class="number">0</span>]</span><br></pre></td></tr></table></figure>
+
+<p>仔细观察上面的式子，按照贪心算法，在索引为 1、2、3 的这三天，我们做的操作应该是买进昨天的，卖出今天的，虽然这种操作题目并不允许，但是它等价于：“在索引为 0 的那一天买入，在索引为 3 的那一天卖出”。</p>
+</li>
+<li><p>解释一下，它为什么叫做贪心算法？</p>
+<p>“贪心算法” 在每一步总是做出在当前看来最好的选择。</p>
+<p>因此，</p>
+<ul>
+<li><p>“贪心算法” 和 “动态规划”、“回溯搜索” 算法一样，完成一件事情，是分步决策的；</p>
+</li>
+<li><p>“贪心算法” 在每一步总是做出在当前看来最好的选择，我是这样理解 “最好” 这两个字的意思：</p>
+<ul>
+<li>“最好” 的意思往往根据题目而来，可能是 “最小”，也可能是 “最大”；</li>
+</ul>
+</li>
+<li><p>贪心算法和动态规划相比，它既不看前面（也就是说它不需要从前面的状态转移过来），也不看后面（无后效性，后面的选择不会对前面的选择有影响），因此贪心算法时间复杂度一般是线性的，空间复杂度是常数级别的。</p>
+</li>
+<li><p>这道题 “贪心” 的地方在于，对于 “今天的股价 - 昨天的股价”，得到的结果有 3 种可能：（1）正数（2）0（3）负数。<strong>贪心算法的决策是：只加正数</strong> 。</p>
+</li>
+</ul>
+</li>
+</ol>
+<p>最终代码如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">maxProfit</span><span class="params">(<span class="keyword">int</span>[] prices)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> res = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">int</span> len = prices.length;</span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; len - <span class="number">1</span>; i++)&#123;</span><br><span class="line">        <span class="keyword">int</span> diff = prices[i + <span class="number">1</span>] - prices[i];</span><br><span class="line">        <span class="keyword">if</span>(diff &gt; <span class="number">0</span>)&#123;</span><br><span class="line">            res += diff;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> res;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="7-参考引用"><a href="#7-参考引用" class="headerlink" title="7. 参考引用"></a>7. 参考引用</h2><ol>
+<li><a href="https://zh.wikipedia.org/wiki/%E8%B4%AA%E5%BF%83%E7%AE%97%E6%B3%95" target="_blank" rel="noopener">Wikipedia</a></li>
+<li><a href="https://labuladong.gitbook.io/algo/dong-tai-gui-hua-xi-lie/tan-xin-suan-fa-zhi-qu-jian-tiao-du-wen-ti" target="_blank" rel="noopener">https://labuladong.gitbook.io/algo/dong-tai-gui-hua-xi-lie/tan-xin-suan-fa-zhi-qu-jian-tiao-du-wen-ti</a></li>
+<li><a href="https://leetcode-cn.com/problems/best-time-to-buy-and-sell-stock-ii/solution/tan-xin-suan-fa-by-liweiwei1419-2/" target="_blank" rel="noopener">https://leetcode-cn.com/problems/best-time-to-buy-and-sell-stock-ii/solution/tan-xin-suan-fa-by-liweiwei1419-2/</a></li>
+</ol>
+]]></content>
+      <categories>
+        <category>Algorithm</category>
+      </categories>
+      <tags>
+        <tag>Java</tag>
+        <tag>Algorithm</tag>
+        <tag>贪心算法</tag>
       </tags>
   </entry>
   <entry>
@@ -1244,165 +1417,6 @@
       </tags>
   </entry>
   <entry>
-    <title>KMP算法</title>
-    <url>/2020/07/16/KMP%E7%AE%97%E6%B3%95/</url>
-    <content><![CDATA[<p>本文主要介绍了 KMP算法的基本思想、代码、优化以及时间复杂度分析。</p>
-<h2 id="1-KMP算法思想"><a href="#1-KMP算法思想" class="headerlink" title="1. KMP算法思想"></a>1. KMP算法思想</h2><h3 id="1-1-简介"><a href="#1-1-简介" class="headerlink" title="1.1 简介"></a>1.1 简介</h3><p><strong>字符串匹配</strong> 是计算机的基本任务之一。举例来说，即有一个字符串”BBC ABCDAB ABCDABCDABDE”，判断该字符串中是否包含另一个字符串”ABCDABD”？许多算法可以完成这个任务，<a href="https://zh.wikipedia.org/wiki/克努斯-莫里斯-普拉特算法" target="_blank" rel="noopener">Knuth-Morris-Pratt算法</a>（简称KMP）是最常用的之一。它以三个发明者命名，其中K代表著名科学家Donald Knuth。KMP算法可在一个字符串S内查找一个词P的出现位置，如果有返回P的起始索引，否则返回-1.</p>
-<p>接下来，我会先举例对KMP算法的思路进行解释（不涉及任何代码）。</p>
-<a id="more"></a>
-
-<h3 id="1-2-基本思路"><a href="#1-2-基本思路" class="headerlink" title="1.2 基本思路"></a>1.2 基本思路</h3><ol>
-<li><p>首先，字符串”BBC ABCDAB ABCDABCDABDE”（称为文本串）的第一个字符与模式串”ABCDABD”的第一个字符，进行比较。因为B与A不匹配，所以搜索词后移一位。</p>
-<img src="/pictures/bg2013050103.png" alt="img" style="zoom:67%;" />
-</li>
-<li><p>因为B与A不匹配，模式串再往后移。</p>
-<img src="/pictures/bg2013050104.png" alt="img" style="zoom:67%;" />
-</li>
-<li><p>就这样，直到文本串有一个字符，与模式串的第一个字符相同为止。</p>
-<img src="/pictures/bg2013050105.png" alt="img" style="zoom:67%;" />
-</li>
-<li><p>接着比较文本串和模式串的下一个字符，还是相同。</p>
-<img src="/pictures/bg2013050106.png" alt="img" style="zoom:67%;" />
-</li>
-<li><p>直到字符串有一个字符，与搜索词对应的字符不相同为止。</p>
-<img src="/pictures/bg2013050107.png" alt="img" style="zoom:67%;" />
-</li>
-<li><p>这时，最自然的反应是，将搜索词整个后移一位，再从头逐个比较。这样做固然可行，但是效率很差，因为你要把”搜索位置”移到已经比较过的位置，重比一遍。</p>
-<img src="/pictures/bg2013050108.png" alt="img" style="zoom:67%;" />
-</li>
-<li><p>一个基本事实是，当空格与D不匹配时，你其实知道前面六个字符是”ABCDAB”。KMP算法的想法是，<strong>设法利用这个已知信息，不要把”搜索位置”移回已经比较过的位置，继续把它向后移，这样就提高了效率</strong>。</p>
-<img src="/pictures/bg2013050107-1594975043794.png" alt="img" style="zoom:67%;" />
-</li>
-<li><p>怎么做到这一点呢？可以针对搜索词，算出一张《部分匹配表》（Partial Match Table）。这张表是如何产生的，后面再介绍，这里只要会用就可以了。</p>
-<img src="/pictures/bg2013050109.png" alt="img" style="zoom:67%;" />
-</li>
-<li><p>已知空格与D不匹配时，前面六个字符”ABCDAB”是匹配的。查表可知，最后一个匹配字符B（不匹配字符的前一个字符）对应的”部分匹配值”为2，因此按照下面的公式算出向后移动的位数：</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">移动位数 = 已匹配的字符数 - 失配字符的前一位字符的部分匹配值</span><br></pre></td></tr></table></figure>
-
-<p>因为 6 - 2 等于4，所以将搜索词向后移动4位。</p>
-</li>
-<li><p>因为空格与Ｃ不匹配，搜索词还要继续往后移。这时，已匹配的字符数为2（”AB”），对应的”部分匹配值”为0。所以，移动位数 = 2 - 0，结果为 2，于是将搜索词向后移2位。</p>
-<img src="/pictures/bg2013050110.png" alt="img" style="zoom:67%;" />
-</li>
-<li><p>因为空格与A不匹配，继续后移一位。</p>
-<img src="/pictures/bg2013050111.png" alt="img" style="zoom:67%;" />
-</li>
-<li><p>逐位比较，直到发现C与D不匹配。于是，移动位数 = 6 - 2，继续将搜索词向后移动4位。</p>
-<img src="/pictures/bg2013050112.png" alt="img" style="zoom:67%;" />
-</li>
-<li><p>逐位比较，直到搜索词的最后一位，发现完全匹配，于是搜索完成。如果还要继续搜索（即找出全部匹配），移动位数 = 7 - 0，再将搜索词向后移动7位，这里就不再重复了。</p>
-<img src="/pictures/bg2013050113.png" alt="img" style="zoom: 67%;" />
-</li>
-<li><p>下面介绍《部分匹配表》是如何产生的。</p>
-<p>首先，要了解两个概念：”前缀”和”后缀”。 “前缀”指除了最后一个字符以外，一个字符串的全部头部组合；”后缀”指除了第一个字符以外，一个字符串的全部尾部组合。</p>
-<img src="/pictures/bg2013050114.png" alt="img" style="zoom:67%;" />
-</li>
-<li><p>“部分匹配值”就是”前缀”和”后缀”的最大公共元素长度。以”ABCDABD”为例，计算过程如下：</p>
-<p><img src="/pictures/20140725231726921" alt="img"></p>
-</li>
-<li><p>“部分匹配”的实质是，有时候，字符串头部和尾部会有重复。比如，”ABCDAB”之中有两个”AB”，那么它的”部分匹配值”就是2（”AB”的长度）。搜索词移动的时候，第一个”AB”向后移动4位（字符串长度-部分匹配值），就可以来到第二个”AB”的位置。</p>
-<img src="/pictures/bg2013050112-1594975805920.png" alt="img" style="zoom:67%;" />
-
-</li>
-</ol>
-<p>到此，我们对于KMP的基本思路有了一个大致的了解，下一部分介绍KMP具体算法细节、代码及优化。</p>
-<h2 id="2-KMP算法代码及优化"><a href="#2-KMP算法代码及优化" class="headerlink" title="2. KMP算法代码及优化"></a>2. KMP算法代码及优化</h2><p>假设现在我们面临这样一个问题：有一个文本串S，和一个模式串P，现在要查找P在S中的位置，怎么查找呢？</p>
-<h3 id="2-1-暴力匹配算法"><a href="#2-1-暴力匹配算法" class="headerlink" title="2.1 暴力匹配算法"></a>2.1 暴力匹配算法</h3><p>如果用暴力匹配的思路，并假设现在文本串S匹配到 i 位置，模式串P匹配到 j 位置，则有：</p>
-<ul>
-<li>如果当前字符匹配成功（即S[i] == P[j]），则i++，j++，继续匹配下一个字符；</li>
-<li>如果失配（即S[i]! = P[j]），令i = i - (j - 1)，j = 0。相当于每次匹配失败时，i 回溯，j 被置为0。</li>
-</ul>
-<p>暴力匹配代码如下：</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">int</span> <span class="title">ViolentMatch</span><span class="params">(<span class="keyword">char</span>[] s, <span class="keyword">char</span>[] p)</span></span>&#123;</span><br><span class="line">    <span class="keyword">int</span> sLen = s.length;</span><br><span class="line">    <span class="keyword">int</span> pLen = p.length;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">int</span> i = <span class="number">0</span>, j = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">while</span> (i &lt; sLen &amp;&amp; j &lt; pLen)&#123;</span><br><span class="line">        <span class="keyword">if</span>(s[i] == p[j])&#123;</span><br><span class="line">            i++;</span><br><span class="line">            j++;</span><br><span class="line">        &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">            i = i - j + <span class="number">1</span>;</span><br><span class="line">            j = <span class="number">0</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span>(j == pLen)&#123;</span><br><span class="line">        <span class="keyword">return</span> i - j;</span><br><span class="line">    &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">        <span class="keyword">return</span> -<span class="number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h3 id="2-2-KMP算法"><a href="#2-2-KMP算法" class="headerlink" title="2.2 KMP算法"></a>2.2 KMP算法</h3><h4 id="2-2-1-求解-next-数组"><a href="#2-2-1-求解-next-数组" class="headerlink" title="2.2.1 求解 next 数组"></a>2.2.1 求解 next 数组</h4><h5 id="2-2-1-1-基本思路"><a href="#2-2-1-1-基本思路" class="headerlink" title="2.2.1.1 基本思路"></a>2.2.1.1 基本思路</h5><p>前文已经计算过“部分匹配表”，即前缀和后缀的最大公共元素长度，如下图所示：</p>
-<p><img src="/pictures/20140725231726921" alt="img"></p>
-<p>由前文可知，失配时，模式串向右移动的位数公式为：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">移动位数 = 已匹配的字符数 - 失配字符的前一位字符的最大公共元素长度</span><br></pre></td></tr></table></figure>
-
-<p>由此我们发现，当匹配一个字符失配时，我们并不会考虑当前字符，而是看失配字符的前一个字符的最大公共元素长度，如此，便引出了next数组。<strong>next 数组相当于最大长度值整体向右移动一位，然后初值赋为-1.</strong> 因而，对于给定的模式串，它的最大长度及next数组分别如下：</p>
-<p><img src="/pictures/20140728110939595" alt="img"></p>
-<p>求得next数组之后，失配时模式串向右移动的位数为：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">移动位数 = 失配字符所在位置 - 失配字符对应的next值</span><br></pre></td></tr></table></figure>
-
-<h5 id="2-2-1-2-代码计算-next-数组"><a href="#2-2-1-2-代码计算-next-数组" class="headerlink" title="2.2.1.2 代码计算 next 数组"></a>2.2.1.2 代码计算 next 数组</h5><ol>
-<li><p>如果<strong>对于值 k, 已有 p0 p1, …, pk-1 = pj-k pj-k+1, …, pj-1，相当于next[j] = k</strong>。究其本质，<strong>next[j] = k 代表p[j] 之前的模式串子串中，有长度为k 的相同前缀和后缀</strong>。有了这个next 数组，在KMP匹配中，当模式串中 j 处的字符失配时，下一步用next[j]处的字符继续跟文本串匹配，相当于模式串向右移动 j - next[j] 位。</p>
-</li>
-<li><p>下面的问题是：已知next [0, …, j]，如何求出next [j + 1]呢？</p>
-<ul>
-<li><p>若p[k] == p[j]，则next[j + 1] = next [j] + 1 = k + 1。</p>
-<p>如下图所示，假定给定模式串ABCDABCE，且已知next [j] = k（相当于“p0 pk-1” = “pj-k pj-1” = AB，可以看出k为2），现要求next [j + 1]等于多少？因为pk = pj = C，所以next[j + 1] = next[j] + 1 = k + 1（可以看出next[j + 1] = 3）。代表字符E前的模式串中，有长度k+1 的相同前缀后缀。</p>
-<p><img src="/pictures/20140729182154066" alt="img"></p>
-</li>
-<li><p>若p[k ] ≠ p[j]，如果此时 p[next[k] ] == p[j]，则next[ j + 1 ] =  next[k] + 1，否则继续递归前缀索引k = next[k]，而后重复此过程。</p>
-<p>如下图所示，当pk != pj后，字符E前有多大长度的相同前缀后缀呢？很明显，因为C不同于D，所以ABC 跟 ABD不相同，即字符E前的模式串没有长度为k+1的相同前缀后缀，也就不能再简单的令：next[j + 1] = next[j] + 1 。所以，咱们只能去寻找长度更短一点的相同前缀后缀。<br><img src="/pictures/20140729181940812" alt="img">   </p>
-<p>结合上图来讲，若能在前缀“ p0 pk-1 pk ” 中不断的递归前缀索引k = next [k]，找到一个字符pk’ 也为D，代表pk’ = pj，且满足p0 pk’-1 pk’ = pj-k’ pj-1 pj，则最大相同的前缀后缀长度为k’ + 1，从而next [j + 1] = k’ + 1 = next [k’ ] + 1。否则前缀中没有D，则代表没有相同的前缀后缀，next [j + 1] = 0。</p>
-<p>那为何递归前缀索引k = next[k]，就能找到长度更短的相同前缀后缀呢？ 这又归根到next数组的含义。<strong>我们拿前缀 p0 pk-1 pk 去跟后缀pj-k pj-1 pj匹配，如果pk 跟pj 失配，下一步就是用p[next[k]] 去跟pj 继续匹配，如果p[ next[k] ]跟pj还是不匹配，则需要寻找长度更短的相同前缀后缀，即下一步用p[ next[ next[k] ] ]去跟pj匹配。</strong></p>
-</li>
-</ul>
-</li>
-<li><p>综上，可以通过递推求得 next 数组，代码如下：</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">int</span>[] getNext(<span class="keyword">char</span>[] p)&#123;</span><br><span class="line">    <span class="keyword">int</span> pLen = p.length;</span><br><span class="line">    <span class="keyword">int</span>[] next = <span class="keyword">new</span> <span class="keyword">int</span>[pLen];</span><br><span class="line">    next[<span class="number">0</span>] = -<span class="number">1</span>;</span><br><span class="line">    <span class="keyword">int</span> k = -<span class="number">1</span>;</span><br><span class="line">    <span class="keyword">int</span> j = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">while</span> (j &lt; pLen - <span class="number">1</span>)&#123;</span><br><span class="line">        <span class="comment">// p[k] 表示前缀；p[j] 表示后缀</span></span><br><span class="line">        <span class="keyword">if</span>(k == -<span class="number">1</span> || p[j] == p[k])&#123;</span><br><span class="line">            ++k;</span><br><span class="line">            next[++j] = k;</span><br><span class="line">        &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">            k = next[k];</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> next;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-</li>
-</ol>
-<h5 id="2-2-1-3-总结-next-数组含义"><a href="#2-2-1-3-总结-next-数组含义" class="headerlink" title="2.2.1.3 总结 next 数组含义"></a>2.2.1.3 总结 next 数组含义</h5><ol>
-<li>代表失配字符之前的字符串中，有多大长度的相同前缀后缀。</li>
-<li>在某个字符失配后，next 值会告诉你下一步匹配中，模式串应该跳到哪个位置。如果next [j] 等于0或 -1，则跳到模式串的开头字符；若next [j] = k 且 k &gt; 0，代表下次匹配跳到 j 之前的某个字符，而不是跳到开头，且具体跳过了k 个字符。</li>
-</ol>
-<h4 id="2-2-2-KMP-算法"><a href="#2-2-2-KMP-算法" class="headerlink" title="2.2.2 KMP 算法"></a>2.2.2 KMP 算法</h4><p>根据上文的分析，KMP算法的代码如下：</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">kmp</span><span class="params">(<span class="keyword">char</span>[] s, <span class="keyword">char</span>[] p, <span class="keyword">int</span>[] next)</span></span>&#123;</span><br><span class="line">    <span class="keyword">int</span> i = <span class="number">0</span>, j = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">int</span> sLen = s.length;</span><br><span class="line">    <span class="keyword">int</span> pLen = p.length;</span><br><span class="line">    <span class="keyword">while</span> (i &lt; sLen &amp;&amp; j &lt; pLen)&#123;</span><br><span class="line">        <span class="keyword">if</span>(j == -<span class="number">1</span> || s[i] == p[j])&#123;</span><br><span class="line">            i++;</span><br><span class="line">            j++;</span><br><span class="line">        &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">            j = next[j];</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span>(j == pLen)&#123;</span><br><span class="line">        <span class="keyword">return</span> i - j;</span><br><span class="line">    &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">        <span class="keyword">return</span> -<span class="number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h4 id="2-2-3-next-数组的优化"><a href="#2-2-3-next-数组的优化" class="headerlink" title="2.2.3 next 数组的优化"></a>2.2.3 next 数组的优化</h4><p>行文至此，我们全面了解了KMP算法的基本思路、流程、代码以及next 数组的求解，但忽略了一个小问题。</p>
-<p>比如，如果用之前的next 数组方法求模式串“abab”的 next 数组，可得其 next 数组为 -1 0 0 1，当它跟下图中的文本串去匹配的时候，发现 b 跟 c 失配，于是模式串右移 j - next[j] = 3 - 1 = 2位。</p>
-<img src="/pictures/8394323_1308075859Zfue.jpg" alt="8394323_1308075859Zfue" style="zoom:67%;" />
-
-<p>右移2位后，b又跟c失配。事实上，因为在上一步的匹配中，已经得知p[3] = b，与s[3] = c失配，而右移两位之后，让p[ next[3] ] = p[1] = b 再跟s[3]匹配时，必然失配。问题出在哪呢？</p>
-<img src="/pictures/8394323_13080758591kyV-1595069195969.jpg" alt="8394323_13080758591kyV" style="zoom:67%;" />
-
-<p>问题出在不该出现p[j] = p[ next[j] ]。为什么呢？理由是：当p[j] != s[i] 时，下次匹配必然是p[ next [j]] 跟s[i]匹配，如果p[j] = p[ next[j] ]，必然导致后一步匹配失败（因为p[j]已经跟s[i]失配，然后你还用跟p[j]等同的值p[next[j]]去跟s[i]匹配，很显然，必然失配），所以不能允许p[j] = p[ next[j ]]。如果出现了p[j] = p[ next[j] ]咋办呢？如果出现了，则需要再次递归，即令next[j] = next[ next[j] ]。</p>
-<p>因此，求解 next 数组的代码优化如下：</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">int</span>[] getNextval(<span class="keyword">char</span>[] p)&#123;</span><br><span class="line">    <span class="keyword">int</span> pLen = p.length;</span><br><span class="line">    <span class="keyword">int</span>[] next = <span class="keyword">new</span> <span class="keyword">int</span>[pLen];</span><br><span class="line">    next[<span class="number">0</span>] = -<span class="number">1</span>;</span><br><span class="line">    <span class="keyword">int</span> k = -<span class="number">1</span>;</span><br><span class="line">    <span class="keyword">int</span> j = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">while</span> (j &lt; pLen - <span class="number">1</span>)&#123;</span><br><span class="line">        <span class="comment">// p[k] 表示前缀；p[j] 表示后缀</span></span><br><span class="line">        <span class="keyword">if</span>(k == -<span class="number">1</span> || p[j] == p[k])&#123;</span><br><span class="line">            ++k;</span><br><span class="line">            ++j;</span><br><span class="line">            <span class="keyword">if</span>(p[j] != p[k])&#123;</span><br><span class="line">                next[j] = k;</span><br><span class="line">            &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">                <span class="comment">// 因为不能出现p[j] = p[next[j]]，所以当出现时需要继续递归，k = next[k] = next[next[k]]</span></span><br><span class="line">                next[j] = next[k];</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">        &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">            k = next[k];</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> next;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h2 id="3-KMP-算法时间复杂度分析"><a href="#3-KMP-算法时间复杂度分析" class="headerlink" title="3. KMP 算法时间复杂度分析"></a>3. KMP 算法时间复杂度分析</h2><p>我们先来回顾一下KMP算法的流程，假设现在文本串S匹配到 i 位置，模式串P匹配到 j 位置：</p>
-<ol>
-<li>如果j = -1，或者当前字符匹配成功（即S[i] == P[j]），都令i++，j++，继续匹配下一个字符；</li>
-<li>如果j != -1，且当前字符匹配失败（即S[i] != P[j]），则令 i 不变，j = next[j]。此举意味着失配时，模式串P相对于文本串S向右移动了j - next [j] 位。</li>
-</ol>
-<p>我们发现如果某个字符匹配成功，模式串首字符的位置保持不动，仅仅是i++、j++；如果匹配失配，i 不变（即 i 不回溯），模式串会跳过匹配过的next [j]个字符。整个算法最坏的情况是，当模式串首字符位于i - j的位置时才匹配成功，算法结束。</p>
-<p>所以，如果文本串的长度为n，模式串的长度为m，那么匹配过程的时间复杂度为O(n)，算上计算next的O(m)时间，KMP的整体时间复杂度为O(m + n)。</p>
-<h2 id="4-例题：实现-strStr-28"><a href="#4-例题：实现-strStr-28" class="headerlink" title="4. 例题：实现 strStr() [28]"></a>4. 例题：实现 strStr() [28]</h2><p>题目来源：<a href="https://leetcode-cn.com/problems/implement-strstr/" target="_blank" rel="noopener">28. 实现 strStr()</a>；另一种动态规划在我的另一篇博客：<a href="">这里</a>.</p>
-<h3 id="题目描述"><a href="#题目描述" class="headerlink" title="题目描述"></a>题目描述</h3><p>实现 strStr() 函数。</p>
-<p>给定一个 haystack 字符串和一个 needle 字符串，在 haystack 字符串中找出 needle 字符串出现的第一个位置 (从0开始)。如果不存在，则返回  -1。</p>
-<p>示例 1:</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">输入: haystack = <span class="string">"hello"</span>, needle = <span class="string">"ll"</span></span><br><span class="line">输出: 2</span><br></pre></td></tr></table></figure>
-
-<p>示例 2:</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">输入: haystack = <span class="string">"aaaaa"</span>, needle = <span class="string">"bba"</span></span><br><span class="line">输出: -1</span><br></pre></td></tr></table></figure>
-
-
-<p>说明:</p>
-<p>当 needle 是空字符串时，我们应当返回什么值呢？这是一个在面试中很好的问题。</p>
-<p>对于本题而言，当 needle 是空字符串时我们应当返回 0 。这与C语言的 strstr() 以及 Java的 indexOf() 定义相符。</p>
-<h3 id="代码"><a href="#代码" class="headerlink" title="代码"></a>代码</h3><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">strStr</span><span class="params">(String haystack, String needle)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span>(needle.length() == <span class="number">0</span>)&#123;<span class="keyword">return</span> <span class="number">0</span>;&#125;</span><br><span class="line">    <span class="keyword">char</span>[] s = haystack.toCharArray();</span><br><span class="line">    <span class="keyword">char</span>[] p = needle.toCharArray();</span><br><span class="line">    <span class="keyword">int</span>[] next = getNextval(p);</span><br><span class="line">    <span class="keyword">return</span> kmp(s, p, next);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">int</span> <span class="title">kmp</span><span class="params">(<span class="keyword">char</span>[] s, <span class="keyword">char</span>[] p, <span class="keyword">int</span>[] next)</span></span>&#123;</span><br><span class="line">    <span class="keyword">int</span> i = <span class="number">0</span>, j = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">int</span> sLen = s.length;</span><br><span class="line">    <span class="keyword">int</span> pLen = p.length;</span><br><span class="line">    <span class="keyword">while</span> (i &lt; sLen &amp;&amp; j &lt; pLen)&#123;</span><br><span class="line">        <span class="keyword">if</span>(j == -<span class="number">1</span> || s[i] == p[j])&#123;</span><br><span class="line">            i++;</span><br><span class="line">            j++;</span><br><span class="line">        &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">            j = next[j];</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span>(j == pLen)&#123;</span><br><span class="line">        <span class="keyword">return</span> i - j;</span><br><span class="line">    &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">        <span class="keyword">return</span> -<span class="number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">int</span>[] getNextval(<span class="keyword">char</span>[] p)&#123;</span><br><span class="line">    <span class="keyword">int</span> pLen = p.length;</span><br><span class="line">    <span class="keyword">int</span>[] next = <span class="keyword">new</span> <span class="keyword">int</span>[pLen];</span><br><span class="line">    next[<span class="number">0</span>] = -<span class="number">1</span>;</span><br><span class="line">    <span class="keyword">int</span> k = -<span class="number">1</span>;</span><br><span class="line">    <span class="keyword">int</span> j = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">while</span> (j &lt; pLen - <span class="number">1</span>)&#123;</span><br><span class="line">        <span class="comment">// p[k] 表示前缀；p[j] 表示后缀</span></span><br><span class="line">        <span class="keyword">if</span>(k == -<span class="number">1</span> || p[j] == p[k])&#123;</span><br><span class="line">            ++k;</span><br><span class="line">            ++j;</span><br><span class="line">            <span class="keyword">if</span>(p[j] != p[k])&#123;</span><br><span class="line">                next[j] = k;</span><br><span class="line">            &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">                <span class="comment">// 因为不能出现p[j] = p[next[j]]，所以当出现时需要继续递归，k = next[k] = next[next[k]]</span></span><br><span class="line">                next[j] = next[k];</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">        &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">            k = next[k];</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> next;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h2 id="5-参考文献"><a href="#5-参考文献" class="headerlink" title="5. 参考文献"></a>5. 参考文献</h2><ol>
-<li><p><a href="https://blog.csdn.net/v_july_v/article/details/7041827" target="_blank" rel="noopener">https://blog.csdn.net/v_july_v/article/details/7041827</a></p>
-</li>
-<li><p><a href="http://www.ruanyifeng.com/blog/2013/05/Knuth–Morris–Pratt_algorithm.html" target="_blank" rel="noopener">http://www.ruanyifeng.com/blog/2013/05/Knuth%E2%80%93Morris%E2%80%93Pratt_algorithm.html</a></p>
-</li>
-</ol>
-]]></content>
-      <categories>
-        <category>Algorithm</category>
-      </categories>
-      <tags>
-        <tag>String</tag>
-        <tag>Algorithm</tag>
-        <tag>KMP</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>设计数据库的一些认识</title>
     <url>/2020/07/12/%E8%AE%BE%E8%AE%A1%E6%95%B0%E6%8D%AE%E5%BA%93%E7%9A%84%E4%B8%80%E4%BA%9B%E8%AE%A4%E8%AF%86/</url>
     <content><![CDATA[<p>近期把之前一个小项目重新进行了规整，发现之前数据库设计存在很多问题。本文参考了一些数据库设计的基本规范以及经验等等，谈一些自己对于数据库设计的认识吧。</p>
@@ -1629,16 +1643,21 @@
 <td align="center"><a href="https://leetcode-cn.com/problems/populating-next-right-pointers-in-each-node-ii/" target="_blank" rel="noopener">填充每个节点的下一个右侧节点指针 II</a></td>
 <td align="center">Hard</td>
 </tr>
+<tr>
+<td align="center">124</td>
+<td align="center"><a href="https://leetcode-cn.com/problems/binary-tree-maximum-path-sum/" target="_blank" rel="noopener">二叉树中的最大路径和</a></td>
+<td align="center">Hard</td>
+</tr>
 </tbody></table>
 <h3 id="2-1-队列操作总结（LinkedList）"><a href="#2-1-队列操作总结（LinkedList）" class="headerlink" title="2.1. 队列操作总结（LinkedList）"></a>2.1. 队列操作总结（LinkedList）</h3><p>参考 <a href="https://blog.csdn.net/NRlovestudy/article/details/98666030" target="_blank" rel="noopener">这里</a>，具体操作如下：</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">Deque&lt;String&gt; queue = <span class="keyword">new</span> LinkedList&lt;&gt;();</span><br><span class="line"><span class="comment">// 尾部添加元素</span></span><br><span class="line">queue.add(<span class="string">"A"</span>);</span><br><span class="line">queue.add(<span class="string">"B"</span>);</span><br><span class="line">queue.add(<span class="string">"C"</span>);</span><br><span class="line">System.out.println(queue); <span class="comment">// [A, B, C]</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 获取但不删除第一个元素</span></span><br><span class="line">String peek = queue.peek();</span><br><span class="line">System.out.println(peek + <span class="string">" ## "</span> + queue); <span class="comment">// A ## [A, B, C]</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 获取并删除第一个元素，没有元素时会发生异常</span></span><br><span class="line">String pop = queue.pop();</span><br><span class="line">System.out.println(pop + <span class="string">" ## "</span> + queue); <span class="comment">// A ## [B, C]</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 获取并删除第一个元素，没有元素时返回null</span></span><br><span class="line">String poll = queue.poll();</span><br><span class="line">System.out.println(poll + <span class="string">" ## "</span> + poll); <span class="comment">// B ## B</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">Deque&lt;String&gt; queue = <span class="keyword">new</span> LinkedList&lt;&gt;();</span><br><span class="line"><span class="comment">// 入队</span></span><br><span class="line"><span class="comment">// 尾部添加元素</span></span><br><span class="line">queue.add(<span class="string">"A"</span>);</span><br><span class="line">queue.add(<span class="string">"B"</span>);</span><br><span class="line">queue.add(<span class="string">"C"</span>);</span><br><span class="line">System.out.println(queue); <span class="comment">// [A, B, C]</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 获取但不删除第一个元素</span></span><br><span class="line">String peek = queue.peek();</span><br><span class="line">System.out.println(peek + <span class="string">" ## "</span> + queue); <span class="comment">// A ## [A, B, C]</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 获取并删除第一个元素，没有元素时会发生异常</span></span><br><span class="line">String pop = queue.pop();</span><br><span class="line">System.out.println(pop + <span class="string">" ## "</span> + queue); <span class="comment">// A ## [B, C]</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 出队</span></span><br><span class="line"><span class="comment">// 获取并删除第一个元素，没有元素时返回null</span></span><br><span class="line">String poll = queue.poll();</span><br><span class="line">System.out.println(poll + <span class="string">" ## "</span> + poll); <span class="comment">// B ## B</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 判空</span></span><br><span class="line">System.out.println(queue.isEmpty());    <span class="comment">//false</span></span><br></pre></td></tr></table></figure>
 
 <p>总结：pop 与 poll 都是取出 LinkedList 的第一个元素，并将该元素删除，等效于 removeFirst；不同点：两者的实现所用数据结构不同：</p>
 <ul>
 <li>poll 是基于队列结构实现的方法，当队列中没有元素时，调用该方法返回 null</li>
 <li>pop 是基于栈结构实现的方法，当栈中没有元素时，调用该方法会发生异常</li>
 </ul>
-<h3 id="2-2-栈操作总结（ArrayDeque）"><a href="#2-2-栈操作总结（ArrayDeque）" class="headerlink" title="2.2. 栈操作总结（ArrayDeque）"></a>2.2. 栈操作总结（ArrayDeque）</h3><figure class="highlight java"><table><tr><td class="code"><pre><span class="line">Deque&lt;String&gt; stack = <span class="keyword">new</span> ArrayDeque&lt;&gt;();</span><br><span class="line"><span class="comment">// 入栈，即在首部添加元素</span></span><br><span class="line">stack.push(<span class="string">"A"</span>);</span><br><span class="line">stack.push(<span class="string">"B"</span>);</span><br><span class="line">stack.push(<span class="string">"C"</span>);</span><br><span class="line">System.out.println(stack);      <span class="comment">// [C, B, A]</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 获取栈顶元素，即第一个元素</span></span><br><span class="line">System.out.println(stack.peek() + <span class="string">" ## "</span> + stack); <span class="comment">// C ## [C, B, A]</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 出栈，即获取并删除第一个元素</span></span><br><span class="line">System.out.println(stack.pop() + <span class="string">" ## "</span> + stack);    <span class="comment">// C ## [B, A]</span></span><br></pre></td></tr></table></figure>
+<h3 id="2-2-栈操作总结（ArrayDeque）"><a href="#2-2-栈操作总结（ArrayDeque）" class="headerlink" title="2.2. 栈操作总结（ArrayDeque）"></a>2.2. 栈操作总结（ArrayDeque）</h3><figure class="highlight java"><table><tr><td class="code"><pre><span class="line">Deque&lt;String&gt; stack = <span class="keyword">new</span> ArrayDeque&lt;&gt;();</span><br><span class="line"><span class="comment">// 入栈，即在首部添加元素</span></span><br><span class="line">stack.push(<span class="string">"A"</span>);</span><br><span class="line">stack.push(<span class="string">"B"</span>);</span><br><span class="line">stack.push(<span class="string">"C"</span>);</span><br><span class="line">System.out.println(stack);      <span class="comment">// [C, B, A]</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 获取栈顶元素，即第一个元素</span></span><br><span class="line">System.out.println(stack.peek() + <span class="string">" ## "</span> + stack); <span class="comment">// C ## [C, B, A]</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 出栈，即获取并删除第一个元素</span></span><br><span class="line">System.out.println(stack.pop() + <span class="string">" ## "</span> + stack);    <span class="comment">// C ## [B, A]</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 判空</span></span><br><span class="line">System.out.println(stack.isEmpty());    <span class="comment">//false</span></span><br></pre></td></tr></table></figure>
 
 <h2 id="3-二叉树的中序遍历-94"><a href="#3-二叉树的中序遍历-94" class="headerlink" title="3. 二叉树的中序遍历 [94]"></a>3. 二叉树的中序遍历 [94]</h2><p>题目来源：<a href="https://leetcode-cn.com/problems/binary-tree-inorder-traversal/" target="_blank" rel="noopener">94. 二叉树的中序遍历</a></p>
 <h3 id="3-1-题目描述"><a href="#3-1-题目描述" class="headerlink" title="3.1. 题目描述"></a>3.1. 题目描述</h3><p>给定一个二叉树，返回它的中序 遍历。</p>
@@ -1911,7 +1930,12 @@
 <p>这种解法同样适用于上一题 [116]。</p>
 <figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> Node <span class="title">connect2</span><span class="params">(Node root)</span> </span>&#123;</span><br><span class="line">    Node cur = root;</span><br><span class="line">    <span class="keyword">while</span> (cur != <span class="keyword">null</span>)&#123;</span><br><span class="line">        Node dummy = <span class="keyword">new</span> Node();</span><br><span class="line">        Node tail = dummy;</span><br><span class="line">        <span class="comment">// 遍历当前层</span></span><br><span class="line">        <span class="keyword">while</span> (cur != <span class="keyword">null</span>)&#123;</span><br><span class="line">            <span class="keyword">if</span>(cur.left != <span class="keyword">null</span>)&#123;</span><br><span class="line">                tail.next = cur.left;</span><br><span class="line">                tail = tail.next;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">if</span>(cur.right != <span class="keyword">null</span>)&#123;</span><br><span class="line">                tail.next = cur.right;</span><br><span class="line">                tail = tail.next;</span><br><span class="line">            &#125;</span><br><span class="line">            cur = cur.next;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 更新到下一层</span></span><br><span class="line">        cur = dummy.next;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> root;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<h2 id="22-参考引用"><a href="#22-参考引用" class="headerlink" title="22. 参考引用"></a>22. 参考引用</h2><ol>
+<h2 id="22-二叉树中的最大路径和-124"><a href="#22-二叉树中的最大路径和-124" class="headerlink" title="22. 二叉树中的最大路径和 [124]"></a>22. 二叉树中的最大路径和 [124]</h2><p>题目来源：<a href="https://leetcode-cn.com/problems/binary-tree-maximum-path-sum/" target="_blank" rel="noopener">124. 二叉树中的最大路径和</a></p>
+<h3 id="22-1-题目描述"><a href="#22-1-题目描述" class="headerlink" title="22.1. 题目描述"></a>22.1. 题目描述</h3><p><img src="../pictures/image-20200915154342061.png" alt="image-20200915154342061"></p>
+<h3 id="22-2-代码"><a href="#22-2-代码" class="headerlink" title="22.2. 代码"></a>22.2. 代码</h3><p>参考 <a href="https://leetcode.wang/leetcode-124-Binary-Tree-Maximum-Path-Sum.html" target="_blank" rel="noopener">这里</a> ，难点在于根本想不到..</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">int</span> max = Integer.MIN_VALUE;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">maxPathSum</span><span class="params">(TreeNode root)</span> </span>&#123;</span><br><span class="line">    helper(root);</span><br><span class="line">    <span class="keyword">return</span> max;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">int</span> <span class="title">helper</span><span class="params">(TreeNode root)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span>(root == <span class="keyword">null</span>)&#123;<span class="keyword">return</span> <span class="number">0</span>;&#125;</span><br><span class="line">    <span class="keyword">int</span> left = Math.max(helper(root.left), <span class="number">0</span>);</span><br><span class="line">    <span class="keyword">int</span> right = Math.max(helper(root.right), <span class="number">0</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 求的过程中考虑包含当前根节点的最大路径</span></span><br><span class="line">    max = Math.max(max, root.val + left + right);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 只返回包含当前根节点和左子树或者右子树的路径</span></span><br><span class="line">    <span class="keyword">return</span> root.val + Math.max(left, right);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="23-参考引用"><a href="#23-参考引用" class="headerlink" title="23. 参考引用"></a>23. 参考引用</h2><ol>
 <li><a href="https://zh.wikipedia.org/wiki/二叉树" target="_blank" rel="noopener">Wikipedia</a></li>
 <li><a href="https://leetcode.wang/leetCode-94-Binary-Tree-Inorder-Traversal.html" target="_blank" rel="noopener">https://leetcode.wang/leetCode-94-Binary-Tree-Inorder-Traversal.html</a></li>
 <li><a href="https://leetcode.wang/leetcode-102-Binary-Tree-Level-Order-Traversal.html" target="_blank" rel="noopener">https://leetcode.wang/leetcode-102-Binary-Tree-Level-Order-Traversal.html</a></li>
