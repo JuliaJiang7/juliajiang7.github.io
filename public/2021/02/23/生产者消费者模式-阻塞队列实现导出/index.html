@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.ico">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"www.juliajiang.top","root":"/","scheme":"Mist","version":"7.7.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="这是我在实习期间实现的一个小功能，断断续续遇到了一些问题，也做了一些优化，收获很大。整体思路简单做了一个demo: export-demo，下文是使用具体解决方案的原因和步骤等等，于我而言是一个梳理和总结，如果也能给你提供一种解决问题的思路，那可真是太好了！ 1. 具体需求简单来说就是：在页面输入查询条件，点击导出，将数据导出为Excel文件。这里导出的Excel文件，我们会上传到文件服务器，并将">
+<meta property="og:type" content="article">
+<meta property="og:title" content="生产者消费者模式+阻塞队列实现异步导出">
+<meta property="og:url" content="https://www.juliajiang.top/2021/02/23/%E7%94%9F%E4%BA%A7%E8%80%85%E6%B6%88%E8%B4%B9%E8%80%85%E6%A8%A1%E5%BC%8F-%E9%98%BB%E5%A1%9E%E9%98%9F%E5%88%97%E5%AE%9E%E7%8E%B0%E5%AF%BC%E5%87%BA/index.html">
+<meta property="og:site_name" content="Julia Jiang&#39;s Blog">
+<meta property="og:description" content="这是我在实习期间实现的一个小功能，断断续续遇到了一些问题，也做了一些优化，收获很大。整体思路简单做了一个demo: export-demo，下文是使用具体解决方案的原因和步骤等等，于我而言是一个梳理和总结，如果也能给你提供一种解决问题的思路，那可真是太好了！ 1. 具体需求简单来说就是：在页面输入查询条件，点击导出，将数据导出为Excel文件。这里导出的Excel文件，我们会上传到文件服务器，并将">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://www.juliajiang.top/pictures/%E5%AF%BC%E5%87%BA%E6%97%B6%E5%BA%8F%E5%9B%BE.jpg">
+<meta property="og:image" content="https://www.juliajiang.top/pictures/%E5%AF%BC%E5%87%BA%E7%B1%BB%E5%9B%BE.jpg">
+<meta property="article:published_time" content="2021-02-23T12:49:20.000Z">
+<meta property="article:modified_time" content="2021-02-28T12:34:26.718Z">
+<meta property="article:author" content="Julia Jiang">
+<meta property="article:tag" content="Java">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://www.juliajiang.top/pictures/%E5%AF%BC%E5%87%BA%E6%97%B6%E5%BA%8F%E5%9B%BE.jpg">
+
+<link rel="canonical" href="https://www.juliajiang.top/2021/02/23/%E7%94%9F%E4%BA%A7%E8%80%85%E6%B6%88%E8%B4%B9%E8%80%85%E6%A8%A1%E5%BC%8F-%E9%98%BB%E5%A1%9E%E9%98%9F%E5%88%97%E5%AE%9E%E7%8E%B0%E5%AF%BC%E5%87%BA/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>生产者消费者模式+阻塞队列实现异步导出 | Julia Jiang's Blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Julia Jiang's Blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Java, Algorithm, NLP</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives</a>
+
+  </li>
+        <li class="menu-item menu-item-commonweal">
+
+    <a href="/404/" rel="section"><i class="fa fa-fw fa-heartbeat"></i>Commonweal 404</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://www.juliajiang.top/2021/02/23/%E7%94%9F%E4%BA%A7%E8%80%85%E6%B6%88%E8%B4%B9%E8%80%85%E6%A8%A1%E5%BC%8F-%E9%98%BB%E5%A1%9E%E9%98%9F%E5%88%97%E5%AE%9E%E7%8E%B0%E5%AF%BC%E5%87%BA/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/icon.jpg">
+      <meta itemprop="name" content="Julia Jiang">
+      <meta itemprop="description" content="If a thing is worth doing, it's worth doing well">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Julia Jiang's Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          生产者消费者模式+阻塞队列实现异步导出
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-02-23 20:49:20" itemprop="dateCreated datePublished" datetime="2021-02-23T20:49:20+08:00">2021-02-23</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-02-28 20:34:26" itemprop="dateModified" datetime="2021-02-28T20:34:26+08:00">2021-02-28</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">Views: </span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+              <span>2k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+              <span>2 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>这是我在实习期间实现的一个小功能，断断续续遇到了一些问题，也做了一些优化，收获很大。整体思路简单做了一个demo: <a href="https://github.com/JuliaJiang7/export-demo" target="_blank" rel="noopener">export-demo</a>，下文是使用具体解决方案的原因和步骤等等，于我而言是一个梳理和总结，如果也能给你提供一种解决问题的思路，那可真是太好了！</p>
+<h2 id="1-具体需求"><a href="#1-具体需求" class="headerlink" title="1. 具体需求"></a>1. 具体需求</h2><p>简单来说就是：在页面输入查询条件，点击导出，将数据导出为Excel文件。这里导出的Excel文件，我们会上传到文件服务器，并将这个导出请求信息和结果存储在请求管理表，在请求管理页面进行展示和下载。</p>
+<p>总结下来，导出过程是：用户输入查询条件 -&gt; 点击导出 -&gt; 生成Excel -&gt; 上传文件服务器 -&gt; 存储文件url等信息到请求管理表 -&gt; 请求管理页面可显示和下载。</p>
+<a id="more"></a>
+
+<h2 id="2-初步方案"><a href="#2-初步方案" class="headerlink" title="2. 初步方案"></a>2. 初步方案</h2><p>这个场景非常适合用 <strong>生产者-消费者模型</strong> 来解决。为什么呢？</p>
+<p>导出一个文件是比较费时的，特别是在导出大量数据时，用户不可能一直处于等待这个导出的状态，服务器也不可能在这段时间只来处理这一个请求，因此就需要 <strong>异步处理</strong> 这个请求，如何实现异步呢？这里我们将项目逻辑上分为两个模块：业务模块和任务模块，两者都单独部署和启动。在业务模块抛出请求后直接返回，而在任务模块进行真正地导出操作。这种异步处理方式就是典型的生产者-消费者。</p>
+<p>生产者-消费者模型的实现方式有很多种，可以参考：<a href="https://juejin.cn/post/6844903486895865864" target="_blank" rel="noopener">Java实现生产者和消费者的5种方式</a>。这里我们采用阻塞队列，并将这个阻塞队列存储在 redis 中，这样两个独立部署的模块也可以通信。</p>
+<h2 id="3-痛点分析"><a href="#3-痛点分析" class="headerlink" title="3. 痛点分析"></a>3. 痛点分析</h2><p>那么对于导出文件，存在哪些痛点呢？</p>
+<ol>
+<li>当单个用户导出大量数据时，可能造成OOM。解决办法：分页导出，每次查询1000条数据填充Excel。</li>
+<li>当多个用户导出数据时，可能造成OOM。解决办法：生产者-消费者模型+阻塞队列。（啊这个OOM还是不太理解）</li>
+<li>导出文件时间长。解决办法：多线程导出，当查询数据大于1000条时每次启5个线程来查询数据，后填充到Excel中。</li>
+</ol>
+<h2 id="4-时序图"><a href="#4-时序图" class="headerlink" title="4. 时序图"></a>4. 时序图</h2><img src="/pictures/导出时序图.jpg"/>
+
+<h2 id="5-类图"><a href="#5-类图" class="headerlink" title="5. 类图"></a>5. 类图</h2><img src="/pictures/导出类图.jpg"/>
+
+<h2 id="6-为什么这么设计？"><a href="#6-为什么这么设计？" class="headerlink" title="6. 为什么这么设计？"></a>6. 为什么这么设计？</h2><ol>
+<li><strong><a href="https://www.runoob.com/design-pattern/template-pattern.html" target="_blank" rel="noopener">模版模式</a></strong>：很多个页面有导出，那每一个导出都单独写一个Handler方法吗？是的…我的第一版代码就是这么写的..这样的代码很明显有很多问题，比如相同的代码要写很多遍，当然这里面有几个小地方不一样，比如查询数据、返回对象等，这样就导致<strong>可维护性</strong>差，比如后期导出的流程有一些改变，那么就需要修改很多类；另外，如果需要再增加一个导出，同样的代码还需要再写一遍，即<strong>可扩展性</strong>很差。<br>回过头来，再看看这个场景，其实非常适合使用模版模式优化。使用一个抽象模版类定义整个导出的流程，在其中定义公共的方法，比如更新请求管理表、发送消息这类功能，每种具体的导出的不同部分，写成抽象方法，在子类中实现，比如导出数据总数、分页查询数据等。</li>
+<li><strong>QueueInfo接口</strong>：定义阻塞队列的名称，有几个阻塞队列，就有几个QueueInfo的实现类，该名称对应EventModel中的key，我们可以把所有的导出放在一个队列中，如果其他事件比如导入，就可以扩展一个新的实现类来定义。</li>
+<li><strong>EventHandler接口</strong>：定义事件处理方法和对应类型EventType。要实现一个事件，必须实现EventHandler接口，这就规定了所有的事件处理类都有这两个方法。这样在consumer中，我们使用<code>applicationContext.getBeansOfType(EventHandler.class)</code> ,并将其转换为EventType和EventHandler实现类的映射，根据EventType就可以调用对应的实现类。为什么这样设计？还是扩展性的问题，如果需要添加一种事件，添加EventHandler的实现类即可。</li>
+</ol>
+<h2 id="7-改进优化"><a href="#7-改进优化" class="headerlink" title="7. 改进优化"></a>7. 改进优化</h2><ol>
+<li>异步处理看起来很美好，但会为代码引入更大的复杂度，比如错误处理、反馈机制等等。比如不知道什么原因的运行失败，导致请求一直处于运行中，这种情况可以使用 <strong>定时任务</strong>（ElasticJob） ，每5分钟查看请求管理表中是否存在运行了一个小时以上的请求，如果存在，将请求状态修改为运行失败。</li>
+</ol>
+<h2 id="8-源码"><a href="#8-源码" class="headerlink" title="8. 源码"></a>8. 源码</h2><p><a href="https://github.com/JuliaJiang7/export-demo" target="_blank" rel="noopener">export-demo</a></p>
+<h2 id="9-一些思考"><a href="#9-一些思考" class="headerlink" title="9. 一些思考"></a>9. 一些思考</h2><p>我们都知道 Java 是面向对象的，三大特性封装、继承、多态，但怎样用好这些特性是很有意思的问题。想起之前面试的一个问题：<strong>接口和抽象类的区别是什么？</strong> 这是一个很常见的面试题，很多博客总结了很多，比如是否有方法实现、修饰符、成员变量类型等这些方面来回答，但真正核心的区别应该在于：抽象类是一个 <strong>模版</strong>，而接口更多的是作为一种 <strong>适配</strong> 的功能，比如上面的模版模式中的模版类，以及EventHandler接口。也就是常见的那句话：</p>
+<blockquote>
+<p> 从设计层面来说，抽象是对类的一种抽象，是一种模板设计；接口是对行为的抽象，是一种行为的规范。</p>
+</blockquote>
+<h2 id="10-参考引用"><a href="#10-参考引用" class="headerlink" title="10. 参考引用"></a>10. 参考引用</h2><ol>
+<li><a href="https://www.cnblogs.com/0813lichenyu/p/11599421.html" target="_blank" rel="noopener">https://www.cnblogs.com/0813lichenyu/p/11599421.html</a></li>
+<li><a href="https://www.runoob.com/design-pattern/template-pattern.html" target="_blank" rel="noopener">https://www.runoob.com/design-pattern/template-pattern.html</a></li>
+</ol>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>Post author:  </strong>Julia Jiang
+  </li>
+  <li class="post-copyright-link">
+    <strong>Post link: </strong>
+    <a href="https://www.juliajiang.top/2021/02/23/%E7%94%9F%E4%BA%A7%E8%80%85%E6%B6%88%E8%B4%B9%E8%80%85%E6%A8%A1%E5%BC%8F-%E9%98%BB%E5%A1%9E%E9%98%9F%E5%88%97%E5%AE%9E%E7%8E%B0%E5%AF%BC%E5%87%BA/" title="生产者消费者模式+阻塞队列实现异步导出">https://www.juliajiang.top/2021/02/23/生产者消费者模式-阻塞队列实现导出/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>Copyright Notice:  </strong>All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA</a> unless stating additionally.
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Java/" rel="tag"># Java</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/09/27/KMP%E7%AE%97%E6%B3%95/" rel="prev" title="KMP算法">
+      <i class="fa fa-chevron-left"></i> KMP算法
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-具体需求"><span class="nav-text">1. 具体需求</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-初步方案"><span class="nav-text">2. 初步方案</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-痛点分析"><span class="nav-text">3. 痛点分析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-时序图"><span class="nav-text">4. 时序图</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-类图"><span class="nav-text">5. 类图</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-为什么这么设计？"><span class="nav-text">6. 为什么这么设计？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-改进优化"><span class="nav-text">7. 改进优化</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-源码"><span class="nav-text">8. 源码</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#9-一些思考"><span class="nav-text">9. 一些思考</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#10-参考引用"><span class="nav-text">10. 参考引用</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Julia Jiang"
+      src="/images/icon.jpg">
+  <p class="site-author-name" itemprop="name">Julia Jiang</p>
+  <div class="site-description" itemprop="description">If a thing is worth doing, it's worth doing well</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">12</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">13</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/JuliaJiang7" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;JuliaJiang7" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/julia.jiang.fan@gmail.com" title="E-Mail → julia.jiang.fan@gmail.com"><i class="fa fa-fw fa-envelope"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://weibo.com/Julia_F" title="Weibo → https:&#x2F;&#x2F;weibo.com&#x2F;Julia_F" rel="noopener" target="_blank"><i class="fa fa-fw fa-weibo"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://twitter.com/FanJiang77" title="Twitter → https:&#x2F;&#x2F;twitter.com&#x2F;FanJiang77" rel="noopener" target="_blank"><i class="fa fa-fw fa-twitter"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://instagram.com/juliajiangf" title="Instagram → https:&#x2F;&#x2F;instagram.com&#x2F;juliajiangf" rel="noopener" target="_blank"><i class="fa fa-fw fa-instagram"></i></a>
+      </span>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title">
+      <i class="fa fa-fw fa-link"></i>
+      Links
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="http://yamon.top/" title="http:&#x2F;&#x2F;yamon.top&#x2F;" rel="noopener" target="_blank">yamon</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://sayna218.github.io/" title="https:&#x2F;&#x2F;sayna218.github.io&#x2F;" rel="noopener" target="_blank">sayna</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Julia Jiang</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    <span title="Symbols count total">147k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">2:14</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a>
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
