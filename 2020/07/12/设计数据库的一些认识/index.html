@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.ico">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"www.juliajiang.top","root":"/","scheme":"Mist","version":"7.7.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="近期把之前一个小项目重新进行了规整，发现之前数据库设计存在很多问题。本文参考了一些数据库设计的基本规范以及经验等等，谈一些自己对于数据库设计的认识吧。 1. 关系数据库的范式数据库规范化，又称正规化、标准化，是数据库设计的一系列原理和技术，以减少数据库中数据冗余，增进数据的一致性。 关系数据库的范式有：第一范式、第二范式、第三范式、BC范式（第三范式的改进范式），除外还包括针对多值依赖的第四范式，">
+<meta property="og:type" content="article">
+<meta property="og:title" content="设计数据库的一些认识">
+<meta property="og:url" content="https://www.juliajiang.top/2020/07/12/%E8%AE%BE%E8%AE%A1%E6%95%B0%E6%8D%AE%E5%BA%93%E7%9A%84%E4%B8%80%E4%BA%9B%E8%AE%A4%E8%AF%86/index.html">
+<meta property="og:site_name" content="Julia Jiang&#39;s Blog">
+<meta property="og:description" content="近期把之前一个小项目重新进行了规整，发现之前数据库设计存在很多问题。本文参考了一些数据库设计的基本规范以及经验等等，谈一些自己对于数据库设计的认识吧。 1. 关系数据库的范式数据库规范化，又称正规化、标准化，是数据库设计的一系列原理和技术，以减少数据库中数据冗余，增进数据的一致性。 关系数据库的范式有：第一范式、第二范式、第三范式、BC范式（第三范式的改进范式），除外还包括针对多值依赖的第四范式，">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://www.juliajiang.top/pictures/image-20200426223214696.png">
+<meta property="og:image" content="https://www.juliajiang.top/pictures/image-20200426223643952.png">
+<meta property="og:image" content="https://www.juliajiang.top/pictures/image-20200426223715720.png">
+<meta property="og:image" content="https://www.juliajiang.top/pictures/image-20200426224653184.png">
+<meta property="og:image" content="https://www.juliajiang.top/pictures/image-20200426224741598.png">
+<meta property="og:image" content="https://www.juliajiang.top/pictures/image-20200426225059906.png">
+<meta property="og:image" content="https://www.juliajiang.top/pictures/image-20200426225223170.png">
+<meta property="og:image" content="https://www.juliajiang.top/pictures/image-20200426225402284.png">
+<meta property="og:image" content="https://www.juliajiang.top/pictures/image-20200426230751958.png">
+<meta property="og:image" content="https://www.juliajiang.top/pictures/image-20200426230943516.png">
+<meta property="og:image" content="https://www.juliajiang.top/pictures/image-20200426231044849.png">
+<meta property="og:image" content="https://www.juliajiang.top/pictures/image-20200427232114257.png">
+<meta property="og:image" content="https://www.juliajiang.top/pictures/image-20200427232353749.png">
+<meta property="og:image" content="https://www.juliajiang.top/pictures/image-20200427232447340.png">
+<meta property="og:image" content="https://www.juliajiang.top/pictures/image-20200427232554631.png">
+<meta property="og:image" content="https://www.juliajiang.top/pictures/image-20200427232650317.png">
+<meta property="og:image" content="https://www.juliajiang.top/pictures/image-20200428230552342.png">
+<meta property="og:image" content="https://www.juliajiang.top/pictures/image-20200428231345713.png">
+<meta property="og:image" content="https://www.juliajiang.top/pictures/image-20200428232129091.png">
+<meta property="og:image" content="https://www.juliajiang.top/pictures/image-20200428232253846.png">
+<meta property="og:image" content="https://www.juliajiang.top/pictures/280px-PrimaryKey_zht.svg.png">
+<meta property="article:published_time" content="2020-07-12T02:58:22.000Z">
+<meta property="article:modified_time" content="2020-12-26T12:26:49.155Z">
+<meta property="article:author" content="Julia Jiang">
+<meta property="article:tag" content="Database">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://www.juliajiang.top/pictures/image-20200426223214696.png">
+
+<link rel="canonical" href="https://www.juliajiang.top/2020/07/12/%E8%AE%BE%E8%AE%A1%E6%95%B0%E6%8D%AE%E5%BA%93%E7%9A%84%E4%B8%80%E4%BA%9B%E8%AE%A4%E8%AF%86/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>设计数据库的一些认识 | Julia Jiang's Blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Julia Jiang's Blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Java, Algorithm, NLP</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives</a>
+
+  </li>
+        <li class="menu-item menu-item-commonweal">
+
+    <a href="/404/" rel="section"><i class="fa fa-fw fa-heartbeat"></i>Commonweal 404</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://www.juliajiang.top/2020/07/12/%E8%AE%BE%E8%AE%A1%E6%95%B0%E6%8D%AE%E5%BA%93%E7%9A%84%E4%B8%80%E4%BA%9B%E8%AE%A4%E8%AF%86/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/icon.jpg">
+      <meta itemprop="name" content="Julia Jiang">
+      <meta itemprop="description" content="If a thing is worth doing, it's worth doing well">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Julia Jiang's Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          设计数据库的一些认识
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2020-07-12 10:58:22" itemprop="dateCreated datePublished" datetime="2020-07-12T10:58:22+08:00">2020-07-12</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2020-12-26 20:26:49" itemprop="dateModified" datetime="2020-12-26T20:26:49+08:00">2020-12-26</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Database/" itemprop="url" rel="index"><span itemprop="name">Database</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">Views: </span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+              <span>3.7k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+              <span>3 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>近期把之前一个小项目重新进行了规整，发现之前数据库设计存在很多问题。本文参考了一些数据库设计的基本规范以及经验等等，谈一些自己对于数据库设计的认识吧。</p>
+<h2 id="1-关系数据库的范式"><a href="#1-关系数据库的范式" class="headerlink" title="1. 关系数据库的范式"></a>1. 关系数据库的范式</h2><p><strong><a href="[https://zh.wikipedia.org/wiki/%E6%95%B0%E6%8D%AE%E5%BA%93%E8%A7%84%E8%8C%83%E5%8C%96](https://zh.wikipedia.org/wiki/数据库规范化)">数据库规范化</a></strong>，又称正规化、标准化，是数据库设计的一系列原理和技术，以减少数据库中数据冗余，增进数据的一致性。</p>
+<p>关系数据库的范式有：第一范式、第二范式、第三范式、BC范式（第三范式的改进范式），除外还包括针对多值依赖的第四范式，连接依赖的第五范式、DK范式和第六范式。</p>
+<a id="more"></a>
+
+<p>现在数据库设计最多满足3NF，普遍认为范式过高，虽然具有对数据关系更好的约束性，但也导致数据关系表增加而令数据库IO更易繁忙，原来交由数据库处理的关系约束现更多在数据库使用程序中完成。</p>
+<p><img src="/pictures/image-20200426223214696.png" alt="image-20200426223214696"></p>
+<h3 id="1-1-第一范式"><a href="#1-1-第一范式" class="headerlink" title="1.1. 第一范式"></a>1.1. 第一范式</h3><p><a href="[https://zh.wikipedia.org/wiki/%E7%AC%AC%E4%B8%80%E6%AD%A3%E8%A6%8F%E5%8C%96](https://zh.wikipedia.org/wiki/第一正規化)">第一范式（1NF）</a> 是数据库正规化所使用的正规形式。第一范式是为了要排除 <em>重复组</em> 的出现，所采用的方法是要求数据库的每个列的值域都是由 <strong>原子值</strong> 组成；每个字段的值都只能是单一值。</p>
+<p>不符合第一范式的情况：</p>
+<ol>
+<li><p>重复组</p>
+<p>重复组通常会出现在会计账上，每一笔记录可能有不定个数的值。举例来说：</p>
+<img src="/pictures/image-20200426223643952.png"/>
+
+<p>“数量”就是所谓的重复组了，而在这种情况下这份数据就不符合第一范式。想要消除重复组的话，只要把每笔记录都转化为单一记录即可：</p>
+<img src="/pictures/image-20200426223715720.png" />
+</li>
+<li><p>缺乏唯一标识符</p>
+<p>一样是在交易这个例子中，同一天同一个人买了同样的数量，这样的交易做了两次：</p>
+<img src="/pictures/image-20200426224653184.png" />
+
+<p>如上所示，这两笔交易可以说是一模一样，也就是说如果只靠这些数据我们没有办法分辨这两笔记录。我们之所以说它不符合第一范式，是因为上面这样的表示法欠缺一个唯一标识符，可以是一个字段，也可以是一组字段，而且可以保证在这个数据中唯一标识符不会重复出现。要将它正规化到符合第一范式的原则只需要加入一个唯一标识符即可：</p>
+<img src="/pictures/image-20200426224741598.png"  />
+</li>
+<li><p>单一字段中有多个有意义的值</p>
+<p>在单一字段中存放多个值是违反第一范式的做法，下面这个就是很好的例子，它把多个值用逗号分开来表示：</p>
+<img src="/pictures/image-20200426225059906.png" />
+
+<p>以这样的设计看来，想要知道有什么人不喜欢某样特定的东西是很不容易的。不过可以把这个数据表转化成下面这种符合第一范式的型式：</p>
+<img src="/pictures/image-20200426225223170.png" />
+</li>
+<li><p>用很多字段来表达同一个事实</p>
+<p>在同一个数据表里用多个字段来表达同一个事情也是违反第一范式的：</p>
+<img src="/pictures/image-20200426225402284.png" />
+
+<p>就算我们能确定每个人不喜欢吃的食物最多不会超过三样，这还是一个很糟的设计。举例来说，我们想要知道所有不喜欢同一种食物的人的组合的话，这就不是件容易的事，因为食物有可能出现在任何一个字段，也就是说每一次的查询都要去检查 9 (3 x 3) 组不同的字段组合。</p>
+</li>
+</ol>
+<h3 id="1-2-第二范式"><a href="#1-2-第二范式" class="headerlink" title="1.2. 第二范式"></a>1.2. 第二范式</h3><p><strong><a href="[https://zh.wikipedia.org/wiki/%E7%AC%AC%E4%BA%8C%E6%AD%A3%E8%A6%8F%E5%8C%96](https://zh.wikipedia.org/wiki/第二正規化)">第二范式（2NF）</a></strong> 是数据库正规化所使用的正规形式。规则是要求数据表里的所有数据都要和该数据表的键（主键与<em>候选键 [下文有介绍 ]</em>）有完全依赖关系：每个非键属性必须独立于任意一个候选键的任意一部分属性。如果有哪些数据只和一个键的一部分有关的话，就得把它们独立出来变成另一个数据表。如果一个数据表的键只有单个字段的话，它就一定符合第二范式。</p>
+<p>一个数据表符合第二范式当且仅当：</p>
+<ul>
+<li>它符合第一范式</li>
+<li>所有非键字段都不能是候选键非全体字段的函数</li>
+</ul>
+<p>示例：</p>
+<p>有一个数据表记录了设备组件的信息，如下所示</p>
+<img src="/pictures/image-20200426230751958.png"  />
+
+<p>这个数据表的每个值都是单一值，所以它符合第一范式。因为同一个组件有可能由不同的供应商提供，所以得把组件 ID 和供应商 ID 合在一起组成一个主键。</p>
+<p>组件（关键词）和价格之间的关系很正确：同一个组件在不同供应商有可能会有不同的报价，所以价格确实和主键完全相关（完全依赖）。</p>
+<p>另一方面，供应商的名称和住址就只和供应商 ID 有关（部分依赖），这不符合第二范式的原则。仔细看就会发现 “Stylized Parts” 这个名称和 “VA” 这个住址重复出现了两次；要是它改名了或是被其他公司并购了怎么办？这时候最好把这些数据存到第二个数据表中：</p>
+<img src="/pictures/image-20200426230943516.png" />
+
+<p>这么一来，原本的 “组件来源” 数据表就得要做相对应的改动：</p>
+<img src="/pictures/image-20200426231044849.png" />
+
+<p>检查数据表里的每个字段，确认它们是不是都和关键词完全相关， 这样才能知道这个数据表是不是符合第二范式； 如果不是的话，就把那些不完全相关的字段移到独立的数据表里。 接下来的步骤是要确保所有不是键的字段都和彼此没有相依关系，这就叫做 <a href="https://zh.wikipedia.org/wiki/第三正規化" target="_blank" rel="noopener">第三范式</a>。</p>
+<h3 id="1-3-第三范式"><a href="#1-3-第三范式" class="headerlink" title="1.3. 第三范式"></a>1.3. 第三范式</h3><p><strong><a href="[https://zh.wikipedia.org/wiki/%E7%AC%AC%E4%B8%89%E6%AD%A3%E8%A6%8F%E5%8C%96](https://zh.wikipedia.org/wiki/第三正規化)">第三范式（3NF）</a></strong> 是数据库正规化所使用的正规形式，要求所有非主键属性都只和候选键有相关性，也就是说非主键属性之间应该是独立无关的。如果再对第三范式做进一步加强就成了<a href="https://zh.wikipedia.org/wiki/BC正規化" target="_blank" rel="noopener">BC正规化</a>，强调的重点在于“数据间的关系是奠基在主键上、以整个主键为考量、而且除了主键之外不考虑其他因素”。</p>
+<p>以下面这个定义机械组件的关系为例：</p>
+<img src="/pictures/image-20200427232114257.png" />
+
+<p>本例中制造商地址很明显地不该被列在这个关系里面，因为和组件本身比起来，制造商地址应该和制造商比较有关系；正确的做法应该是把独立成为一个新的数据表：</p>
+<img src="/pictures/image-20200427232353749.png" />
+
+<p>然后把原本的数据表改成这样：</p>
+<img src="/pictures/image-20200427232447340.png" />
+
+<p>先前那个数据表的问题在于每提到一次制造商名称就要多存一次它的地址，而这就不符合第三范式的原则。</p>
+<p>下面提供了另一个例子：</p>
+<img src="/pictures/image-20200427232554631.png" />
+
+<p>在本例中，非主键字段完全依赖于主键订单编号，也就是说唯一的订单编号能导出唯一非主键字段值，符合第二范式。第三范式要求非主键字段之间不能有依赖关系，显然本例中小计依赖于非主键字段“单价”和“数量”，不符合第三范式。小计不应该放在这个数据表里面，只要把单价乘上数量就可以得到小计了；如果想要符合第三范式的话，就把小计拿掉吧 (不过在做查询的时候，本来用 SELECT Order.Total FROM Order 就要改成用 SELECT UnitPrice * Quantity FROM Order 了)。</p>
+<img src="/pictures/image-20200427232650317.png" />
+
+<h3 id="1-4-第四范式"><a href="#1-4-第四范式" class="headerlink" title="1.4. 第四范式"></a>1.4. 第四范式</h3><p><strong><a href="[https://zh.wikipedia.org/wiki/%E7%AC%AC%E5%9B%9B%E6%AD%A3%E8%A6%8F%E5%8C%96](https://zh.wikipedia.org/wiki/第四正規化)">第四正规化（4NF）</a></strong> 是数据库正规化中所使用的一种正规形式，是BC范式之后的另一层次的规范化。第二范式、第三范式、BC范式关注于属性集合之间的函数依赖；而第四范式关注更一般形式称作 <strong>多值依赖</strong>。</p>
+<p>例子：</p>
+<img src="/pictures/image-20200428230552342.png" />
+
+<p>每一行指出一家饭店能提供一种披萨与一个配货地区。</p>
+<p>该表没有非键属性，因为它仅有的键是{Restaurant, Pizza Variety, Delivery Area}。因此，它满足到BC范式为止的所有范式。如果假设，饭店提供的披萨种类与配货地区无关。也即饭店为所有的供货地区提供它能制作的所有披萨类型。那么，这个表不满足第四范式。因为这个表在{Restaurant}属性（它不是超键）上提供了两个非平凡的多值依赖:</p>
+<ul>
+<li>{Restaurant} -&gt; {Pizza Variety}</li>
+<li>{Restaurant} -&gt; {Delivery Area}</li>
+</ul>
+<p>这些在一个非超键上的非平凡多值依赖说明了饭店提供的披萨的多样性独立于饭店的供货地区。这导致了该表中的数据冗余：例如，A1 Pizza供货 Stuffed Crust就重复了3遍；如果A1 Pizza开始生产Cheese Crust pizzas那么向表中增加多行，A1 Pizza的每个供货地区都需要一行。这就可能在给A1 Pizza的每个供货地区增加一行Cheese Crust披萨时，遗漏了一个供货地区，从而导致不满足于多值依赖{Restaurant}-&gt;{Pizza Variety}。</p>
+<p>为了避免上述的错误发生，需要把披萨的多样性与供货地区放置在不同的表中，产生了两张满足第四范式的表：</p>
+<img src="/pictures/image-20200428231345713.png" />
+
+<p>如果披萨的种类随着供货地区不同而变化，那么最初的三列的表就满足第四范式。</p>
+<h3 id="1-5-第五范式"><a href="#1-5-第五范式" class="headerlink" title="1.5. 第五范式"></a>1.5. 第五范式</h3><p><strong><a href="[https://zh.wikipedia.org/wiki/%E7%AC%AC%E4%BA%94%E8%8C%83%E5%BC%8F](https://zh.wikipedia.org/wiki/第五范式)">第五范式 (5NF)</a></strong>，也称投影-连接范式（project-join normal form，PJ/NF）是数据库规范化的一个级别，以去除多个关系之间的语义相关。一张表满足第五范式当且仅当它的每个连接依赖可由候选键推出。</p>
+<p>例子：</p>
+<img src="/pictures/image-20200428232129091.png" />
+
+<p>三列共同组成了主键。该表也满足第四范式，因为不存在多值依赖。</p>
+<p>如果没有任何规则限制上门推销员、品牌、产品类型的组合，那么上述三个属性的表是必须的以描述这些数据。但是，如果假定存在下述规则：如果上门推销员经营某个品牌与某个产品类型，那么该推销员必须经营该品牌制造的该产品类型的商品。这种情形下，可以把上表分为三个表：</p>
+<p><img src="/pictures/image-20200428232253846.png" alt="image-20200428232253846"></p>
+<p>在这种情形下，如果上门推销员推销Acme的其它类型的产品也推销其它品牌的真空吸尘器，则他Louis Ferguson不可能拒绝销售由ACME制造的真空吸尘器（Vacuum Cleaner）。</p>
+<p>注意这种方式是如何去除数据冗余。假设经营面包箱与真空吸尘器的上门推销员Jack Schneider开始新增销售Robusto品牌。在最初的那张表中，需要增加两行： (&lt;Jack Schneider, Robusto, Breadboxes&gt;, &lt;Jack Schneider, Robusto, Vacuum Cleaners&gt;)。而在分解后的三张表的设计中，仅需要在表“Brands By Traveling Salesman”中增加一行：(&lt;Jack Schneider, Robusto&gt;)。</p>
+<p>用途：</p>
+<p>仅在很少情况下满足第四范式的表可能会不满足第五范式。这发生在复杂的真实世界的约束限定了属性的有效组合，但不能在满足第四范式的表的结构中体现出来。这种表如果不能规范化为第五范式，就需要应用程序通过插入、修改、删除等操作来维护表中的数据的逻辑一致性。相反，满足第五范式的表的设计排除了这种不一致性。</p>
+<h2 id="2-关系键"><a href="#2-关系键" class="headerlink" title="2. 关系键"></a>2. 关系键</h2><p><strong><a href="[https://zh.wikipedia.org/wiki/%E5%85%B3%E7%B3%BB%E9%94%AE](https://zh.wikipedia.org/wiki/关系键)">关系键</a></strong> 是关系数据库的重要组成部分。关系键是一个表中的一个或几个属性，用来标识该表的每一行或与另一个表产生联系。</p>
+<p><img src="/pictures/280px-PrimaryKey_zht.svg.png" alt="img"></p>
+<h2 id="3-书写高质量SQL的建议"><a href="#3-书写高质量SQL的建议" class="headerlink" title="3. 书写高质量SQL的建议"></a>3. 书写高质量SQL的建议</h2><p><a href="https://mp.weixin.qq.com/s?__biz=Mzg2OTA0Njk0OA==&mid=2247485117&idx=1&sn=92361755b7c3de488b415ec4c5f46d73&chksm=cea24976f9d5c060babe50c3747616cce63df5d50947903a262704988143c2eeb4069ae45420&token=79317275&lang=zh_CN#rd" target="_blank" rel="noopener">MySQL高性能优化规范建议</a></p>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>Post author:  </strong>Julia Jiang
+  </li>
+  <li class="post-copyright-link">
+    <strong>Post link: </strong>
+    <a href="https://www.juliajiang.top/2020/07/12/%E8%AE%BE%E8%AE%A1%E6%95%B0%E6%8D%AE%E5%BA%93%E7%9A%84%E4%B8%80%E4%BA%9B%E8%AE%A4%E8%AF%86/" title="设计数据库的一些认识">https://www.juliajiang.top/2020/07/12/设计数据库的一些认识/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>Copyright Notice:  </strong>All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA</a> unless stating additionally.
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Database/" rel="tag"># Database</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/07/10/%E4%BA%8C%E5%8F%89%E6%A0%91%E6%80%BB%E7%BB%93/" rel="prev" title="二叉树总结">
+      <i class="fa fa-chevron-left"></i> 二叉树总结
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/07/23/JSON%E4%B8%8EJava%E5%AF%B9%E8%B1%A1%E7%9A%84%E8%BD%AC%E6%8D%A2/" rel="next" title="JSON与Java对象的转换">
+      JSON与Java对象的转换 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-关系数据库的范式"><span class="nav-text">1. 关系数据库的范式</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-1-第一范式"><span class="nav-text">1.1. 第一范式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-2-第二范式"><span class="nav-text">1.2. 第二范式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-3-第三范式"><span class="nav-text">1.3. 第三范式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-4-第四范式"><span class="nav-text">1.4. 第四范式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-5-第五范式"><span class="nav-text">1.5. 第五范式</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-关系键"><span class="nav-text">2. 关系键</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-书写高质量SQL的建议"><span class="nav-text">3. 书写高质量SQL的建议</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Julia Jiang"
+      src="/images/icon.jpg">
+  <p class="site-author-name" itemprop="name">Julia Jiang</p>
+  <div class="site-description" itemprop="description">If a thing is worth doing, it's worth doing well</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">12</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">13</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/JuliaJiang7" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;JuliaJiang7" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/julia.jiang.fan@gmail.com" title="E-Mail → julia.jiang.fan@gmail.com"><i class="fa fa-fw fa-envelope"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://weibo.com/Julia_F" title="Weibo → https:&#x2F;&#x2F;weibo.com&#x2F;Julia_F" rel="noopener" target="_blank"><i class="fa fa-fw fa-weibo"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://twitter.com/FanJiang77" title="Twitter → https:&#x2F;&#x2F;twitter.com&#x2F;FanJiang77" rel="noopener" target="_blank"><i class="fa fa-fw fa-twitter"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://instagram.com/juliajiangf" title="Instagram → https:&#x2F;&#x2F;instagram.com&#x2F;juliajiangf" rel="noopener" target="_blank"><i class="fa fa-fw fa-instagram"></i></a>
+      </span>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title">
+      <i class="fa fa-fw fa-link"></i>
+      Links
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="http://yamon.top/" title="http:&#x2F;&#x2F;yamon.top&#x2F;" rel="noopener" target="_blank">yamon</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://sayna218.github.io/" title="https:&#x2F;&#x2F;sayna218.github.io&#x2F;" rel="noopener" target="_blank">sayna</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Julia Jiang</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    <span title="Symbols count total">147k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">2:14</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a>
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
