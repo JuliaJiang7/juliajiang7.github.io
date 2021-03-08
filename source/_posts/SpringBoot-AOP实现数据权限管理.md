@@ -18,28 +18,28 @@ typora-copy-images-to: ..\pictures
 
 <!--more-->
 
-## 功能需求
+## 1. 功能需求
 
 用户登录后，查看所有员工信息时，只展示有权限查看的数据。权限的限制维度是部门id和业务线id，即登录用户展示的数据是同时满足部门id和业务线id的员工信息。
 
-## 流程图
+## 2. 流程图
 
 <img src="/pictures/Spring-AOP流程.jpg"/>
 
-## 类图
+## 3. 类图
 
 <img src="/pictures/Spring-AOP类图.jpg"/>
 
-## 数据库
+## 4. 数据库
 
 <img src="/pictures/AOP-数据库UML.png"/>
 
-## 源码
+## 5. 源码
 
 [data-permission-aop-demo](https://github.com/JuliaJiang7/data-permission-aop-demo)
 
 
 
-## 参考引用
+## 6. 参考引用
 
 1. [SpringBoot-AOP处理数据过滤](http://wjwcloud.com/springboot/2019/03/01/SpringBoot_AOP_dataAuthority/)
