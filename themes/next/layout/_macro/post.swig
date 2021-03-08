@@ -46,6 +46,12 @@
           {%- set time_diff = time(post.date) != time(post.updated) %}
           {%- set datetime_diff = date_diff or time_diff %}
 
+          {% if post.top %}
+            <i class="fa fa-thumb-tack"></i>
+            <font>top</font>
+            <span class="post-meta-divider">|</span>
+          {% endif %}
+
           {%- if theme.post_meta.created_at %}
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
