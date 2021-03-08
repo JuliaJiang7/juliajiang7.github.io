@@ -8,15 +8,15 @@
 <p>本文将以一个小例子介绍如何使用AOP实现数据权限管理，源码：<a href="https://github.com/JuliaJiang7/data-permission-aop-demo" target="_blank" rel="noopener">data-permission-aop-demo</a></p>
 <a id="more"></a>
 
-<h2 id="功能需求"><a href="#功能需求" class="headerlink" title="功能需求"></a>功能需求</h2><p>用户登录后，查看所有员工信息时，只展示有权限查看的数据。权限的限制维度是部门id和业务线id，即登录用户展示的数据是同时满足部门id和业务线id的员工信息。</p>
-<h2 id="流程图"><a href="#流程图" class="headerlink" title="流程图"></a>流程图</h2><img src="/pictures/Spring-AOP流程.jpg"/>
+<h2 id="1-功能需求"><a href="#1-功能需求" class="headerlink" title="1. 功能需求"></a>1. 功能需求</h2><p>用户登录后，查看所有员工信息时，只展示有权限查看的数据。权限的限制维度是部门id和业务线id，即登录用户展示的数据是同时满足部门id和业务线id的员工信息。</p>
+<h2 id="2-流程图"><a href="#2-流程图" class="headerlink" title="2. 流程图"></a>2. 流程图</h2><img src="/pictures/Spring-AOP流程.jpg"/>
 
-<h2 id="类图"><a href="#类图" class="headerlink" title="类图"></a>类图</h2><img src="/pictures/Spring-AOP类图.jpg"/>
+<h2 id="3-类图"><a href="#3-类图" class="headerlink" title="3. 类图"></a>3. 类图</h2><img src="/pictures/Spring-AOP类图.jpg"/>
 
-<h2 id="数据库"><a href="#数据库" class="headerlink" title="数据库"></a>数据库</h2><img src="/pictures/AOP-数据库UML.png"/>
+<h2 id="4-数据库"><a href="#4-数据库" class="headerlink" title="4. 数据库"></a>4. 数据库</h2><img src="/pictures/AOP-数据库UML.png"/>
 
-<h2 id="源码"><a href="#源码" class="headerlink" title="源码"></a>源码</h2><p><a href="https://github.com/JuliaJiang7/data-permission-aop-demo" target="_blank" rel="noopener">data-permission-aop-demo</a></p>
-<h2 id="参考引用"><a href="#参考引用" class="headerlink" title="参考引用"></a>参考引用</h2><ol>
+<h2 id="5-源码"><a href="#5-源码" class="headerlink" title="5. 源码"></a>5. 源码</h2><p><a href="https://github.com/JuliaJiang7/data-permission-aop-demo" target="_blank" rel="noopener">data-permission-aop-demo</a></p>
+<h2 id="6-参考引用"><a href="#6-参考引用" class="headerlink" title="6. 参考引用"></a>6. 参考引用</h2><ol>
 <li><a href="http://wjwcloud.com/springboot/2019/03/01/SpringBoot_AOP_dataAuthority/" target="_blank" rel="noopener">SpringBoot-AOP处理数据过滤</a></li>
 </ol>
 ]]></content>
